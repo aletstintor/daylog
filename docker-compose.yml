@@ -5,11 +5,13 @@ services:
     container_name: daylog-db
     restart: always
     environment:
-      POSTGRES_DB: daylog
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_PORT: ${POSTGRES_PORT}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d daylog"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} -h ${POSTGRES_HOST} -p ${POSTGRES_PORT}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -23,9 +25,9 @@ services:
       - 3000:3000
     environment:
       # See .env.example for all available environment variables
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/daylog?schema=public
-      - ENVIRONMENT=production
-      - STORAGE_PATH=/app/storage
+      - DATABASE_URL=${DATABASE_URL}
+      - ENVIRONMENT=${ENVIRONMENT}
+      - STORAGE_PATH=${STORAGE_PATH}
     depends_on:
       db:
         condition: service_healthy
