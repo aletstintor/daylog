@@ -1,6 +1,6 @@
 {
   "name": "daylog",
-  "version": "1.0.0-rc.2",
+  "version": "1.0.1",
   "private": true,
   "scripts": {
     "dev": "next dev",
