@@ -103,7 +103,7 @@ export default function ImageSection({
     setError(null);
     try {
       const res = await fetch(
-        `/api/v1/images/unsplash?keyword=${encodeURIComponent(keyword)}&page=${page}&per_page=8`,
+        `/api/v1/images/unsplash?keyword=${encodeURIComponent(keyword)}&page=${page}&per_page=12`,
       );
 
       if (!res.ok) {
@@ -203,14 +203,14 @@ export default function ImageSection({
                 </div>
               ) : error ? (
                 <div className="flex h-full items-center justify-center py-12 px-8 text-center">
-                  <div className="alert-danger border border-destructive/20 rounded-xl p-4 animate-in fade-in zoom-in-95 duration-300">
-                    <div className="p-2 rounded-full bg-[var(--color-text-accent-red)]/10 w-fit mx-auto mb-3">
-                      <XMarkIcon className="h-6 w-6 text-accent-red" />
+                  <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 animate-in fade-in zoom-in-95 duration-300">
+                    <div className="p-2 rounded-full bg-destructive/15 w-fit mx-auto mb-3">
+                      <XMarkIcon className="h-6 w-6 text-destructive" />
                     </div>
-                    <p className="text-sm font-bold text-accent-red mb-1">
+                    <p className="text-sm font-bold text-destructive mb-1">
                       Search Failed
                     </p>
-                    <p className="text-xs text-accent-red leading-relaxed">
+                    <p className="text-xs text-destructive/80 leading-relaxed">
                       {error}
                     </p>
                   </div>
