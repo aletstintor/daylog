@@ -1,6 +1,6 @@
 import type React from 'react';
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { cleanup, render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import Page from './page';
 
 vi.mock('framer-motion', async () => {
@@ -32,6 +32,10 @@ mockIntersectionObserver.mockReturnValue({
 window.IntersectionObserver = mockIntersectionObserver;
 
 describe('Terms of Service Page', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
   it('renders the "Terms of Service" heading', () => {
     render(<Page />);
     const heading = screen.getByRole('heading', {
