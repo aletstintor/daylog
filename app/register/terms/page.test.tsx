@@ -1,17 +1,22 @@
+import type React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import Page from './page';
 
 vi.mock('framer-motion', async () => {
-  const actual = await vi.importActual<any>('framer-motion');
+  const actual =
+    await vi.importActual<typeof import('framer-motion')>('framer-motion');
   return {
     ...actual,
     motion: {
       ...actual.motion,
-      div: ({ children, ...props }: any) => {
+      div: ({ children, ...props }: React.ComponentProps<'div'>) => {
         // filter out framer-motion props
-        const { initial, animate, transition, ...rest } = props;
-        return <div {...rest}>{children}</div>;
+        const domProps = { ...props };
+        delete (domProps as Record<string, unknown>).initial;
+        delete (domProps as Record<string, unknown>).animate;
+        delete (domProps as Record<string, unknown>).transition;
+        return <div {...domProps}>{children}</div>;
       },
     },
   };
