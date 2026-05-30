@@ -292,11 +292,10 @@
   },
   "Backup": {
     "title": "Backup",
-    "description": "Save or export all your data in a JSON file. Depending on your data, it may take a while. Please do not refresh this page until the save file dialog appears.",
-    "copied": "Copied!",
-    "copyJson": "Copy JSON",
-    "processing": "Processing...",
-    "download": "Download Data"
+    "description": "Export all your boards, notes and images as a ZIP file. Stay on this page until the download starts.",
+    "download": "Download ZIP",
+    "preparing": "Preparing export…",
+    "exportError": "Export failed. Please try again."
   },
   "DangerZone": {
     "label": "Danger Zone",

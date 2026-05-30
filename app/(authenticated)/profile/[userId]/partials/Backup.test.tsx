@@ -1,87 +1,118 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Backup from './Backup';
 
-const state = {
-  message: '',
-  success: false,
-  errors: {},
-  data: {},
-};
+const mockCreateObjectURL = vi.fn(() => 'blob:mock-url');
+const mockRevokeObjectURL = vi.fn();
 
-const mocks = vi.hoisted(() => ({
-  useActionState: vi.fn(() => [state, vi.fn(), false]),
-}));
-
-vi.mock('../lib/actions', () => ({
-  backupData: vi.fn(),
-}));
-
-vi.mock('react', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('react')>();
-  return {
-    ...actual,
-    useActionState: mocks.useActionState,
-  };
+Object.defineProperty(globalThis, 'URL', {
+  value: {
+    createObjectURL: mockCreateObjectURL,
+    revokeObjectURL: mockRevokeObjectURL,
+  },
+  writable: true,
 });
 
 describe('Backup', () => {
-  const profile = { id: 1, name: 'John Doe', email: 'john@example.com' };
-
   beforeEach(() => {
     cleanup();
+    vi.restoreAllMocks();
   });
 
-  it('renders the backup form', () => {
-    mocks.useActionState.mockReturnValue([state, vi.fn(), false]);
-    render(<Backup profile={profile} />);
+  it('renders the backup card', () => {
+    render(<Backup />);
 
     expect(screen.getByText('Backup')).toBeDefined();
-    expect(screen.getByText(/Save or export all your data/i)).toBeDefined();
-    expect(screen.getByText(/Download Data/i)).toBeDefined();
+    expect(screen.getByText(/Export all your boards/i)).toBeDefined();
+    expect(screen.getByText(/Download ZIP/i)).toBeDefined();
   });
 
-  it('displays an error message when state has an error', () => {
-    const errorMessage = 'An error occurred';
-    mocks.useActionState.mockReturnValue([
-      { success: false, message: errorMessage, errors: {}, data: {} },
-      vi.fn(),
-      false,
-    ]);
-    render(<Backup profile={profile} />);
+  it('shows preparing state while export is in progress', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => new Promise(() => {})),
+    );
 
-    expect(screen.getByText(errorMessage)).toBeDefined();
+    render(<Backup />);
+    fireEvent.click(screen.getByText(/Download ZIP/i));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Preparing export/i)).toBeDefined();
+    });
+
+    const button = screen.getByRole('button');
+    expect(button).toBeDisabled();
   });
 
-  it('displays the backup data when state is successful', () => {
-    const backupData = JSON.stringify({ data: 'backup data' });
-    mocks.useActionState.mockReturnValue([
-      { success: true, message: '', errors: {}, data: backupData },
-      vi.fn(),
-      false,
-    ]);
-    render(<Backup profile={profile} />);
+  it('triggers download when export succeeds', async () => {
+    const mockBlob = new Blob(['zip content'], { type: 'application/zip' });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve({ ok: true, blob: () => Promise.resolve(mockBlob) }),
+      ),
+    );
 
-    expect(screen.getByDisplayValue(backupData)).toBeDefined();
-    expect(screen.getByText(/Copy JSON/i)).toBeDefined();
+    const anchorClick = vi.fn();
+    const originalCreateElement = document.createElement.bind(document);
+    vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      if (tag === 'a') {
+        const el = originalCreateElement('a');
+        el.click = anchorClick;
+        return el;
+      }
+      return originalCreateElement(tag);
+    });
+
+    render(<Backup />);
+    fireEvent.click(screen.getByText(/Download ZIP/i));
+
+    await waitFor(() => {
+      expect(anchorClick).toHaveBeenCalled();
+    });
+
+    expect(mockCreateObjectURL).toHaveBeenCalledWith(mockBlob);
+    expect(mockRevokeObjectURL).toHaveBeenCalledWith('blob:mock-url');
   });
 
-  it('disables the submit button when pending', () => {
-    mocks.useActionState.mockReturnValue([state, vi.fn(), true]);
-    render(<Backup profile={profile} />);
+  it('shows error when export fails', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() => Promise.resolve({ ok: false })),
+    );
 
-    const submitButton = screen.getByText(/Processing.../i);
-    expect(submitButton).toBeDisabled();
+    render(<Backup />);
+    fireEvent.click(screen.getByText(/Download ZIP/i));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Export failed/i)).toBeDefined();
+    });
   });
 
-  it('calls the action when the form is submitted', () => {
-    const mockAction = vi.fn();
-    mocks.useActionState.mockReturnValue([state, mockAction, false]);
-    render(<Backup profile={profile} />);
+  it('resets to idle after successful download', async () => {
+    const mockBlob = new Blob(['zip content'], { type: 'application/zip' });
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(() =>
+        Promise.resolve({ ok: true, blob: () => Promise.resolve(mockBlob) }),
+      ),
+    );
 
-    const submitButton = screen.getByText(/Download Data/i);
-    fireEvent.click(submitButton);
+    const originalCreateElement = document.createElement.bind(document);
+    vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+      const el = originalCreateElement(tag);
+      if (tag === 'a') el.click = vi.fn();
+      return el;
+    });
 
-    expect(mockAction).toHaveBeenCalled();
+    render(<Backup />);
+    fireEvent.click(screen.getByText(/Download ZIP/i));
+
+    await waitFor(() => {
+      expect(screen.getByText(/Download ZIP/i)).toBeDefined();
+    });
+
+    const button = screen.getByRole('button');
+    expect(button).not.toBeDisabled();
   });
 });

@@ -292,11 +292,10 @@
   },
   "Backup": {
     "title": "Respaldo",
-    "description": "Guarda o exporta todos tus datos en un archivo JSON. Según el volumen de datos puede tardar un poco. No recargues esta página hasta que aparezca el diálogo para guardar el archivo.",
-    "copied": "¡Copiado!",
-    "copyJson": "Copiar JSON",
-    "processing": "Procesando...",
-    "download": "Descargar datos"
+    "description": "Exporta todos tus tableros, notas e imágenes como un archivo ZIP. Permanece en esta página hasta que comience la descarga.",
+    "download": "Descargar ZIP",
+    "preparing": "Preparando exportación…",
+    "exportError": "Error al exportar. Por favor inténtalo de nuevo."
   },
   "DangerZone": {
     "label": "Zona de peligro",

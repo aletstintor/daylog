@@ -84,7 +84,7 @@ export default async function Profile({
         <UpdatePass userId={user.id} profile={profile} />
         {user.id === profile.id && <EncryptData profile={profile} />}
         {settings?.mfa && <MultiFAAuth profile={profile}></MultiFAAuth>}
-        {user.id === profile.id && <Backup profile={profile} />}
+        {user.id === profile.id && <Backup />}
         <DangerZone profile={profile}></DangerZone>
       </PageBody>
       <PageFooter />
