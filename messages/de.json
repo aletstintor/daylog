@@ -19,6 +19,7 @@
     "boards": "Pinnwände",
     "profile": "Profil",
     "shared": "Geteilt",
+    "community": "Gemeinschaft",
     "admin": "Admin",
     "myAccount": "Mein Konto",
     "administration": "Verwaltung",
@@ -349,6 +350,7 @@
       "entity": "Element",
       "config": "Konfiguration",
       "readers": "Eindeutige Leser (W/M/Gesamt)",
+      "readersShort": "w/m/gesamt",
       "created": "Erstellt",
       "actions": "Aktionen"
     },
@@ -357,15 +359,20 @@
       "description": "Teile eine Notiz oder eine Pinnwand, um sie hier zu sehen."
     },
     "types": {
+      "publicNote": "Öffentliche Notiz",
       "sharedNote": "Geteilte Notiz",
-      "publicBoard": "Öffentliche Pinnwand"
+      "publicBoard": "Öffentliche Pinnwand",
+      "sharedBoard": "Geteilte Pinnwand"
     },
     "badges": {
       "password": "Passwort",
       "expired": "Abgelaufen",
       "expires": "Läuft ab",
       "oneTime": "Einmalig",
-      "public": "Öffentlich"
+      "public": "Öffentlich",
+      "server": "Server",
+      "specific": "Spezifisch",
+      "canEdit": "Kann bearbeiten"
     },
     "actions": {
       "updatePassword": "Passwort aktualisieren",
@@ -373,7 +380,22 @@
       "copyLink": "Freigabelink kopieren",
       "copiedLink": "Link kopiert",
       "openPage": "Geteilte Seite öffnen",
-      "revoke": "Link widerrufen"
+      "revoke": "Widerrufen",
+      "viewRecipients": "Empfänger anzeigen",
+      "viewMetrics": "Metriken anzeigen"
+    },
+    "metricsDialog": {
+      "title": "Metriken",
+      "weekly": "Diese Woche",
+      "monthly": "Diesen Monat",
+      "total": "Gesamt"
+    },
+    "recipientsDialog": {
+      "title": "Geteilt mit",
+      "allMembers": "Alle Servermitglieder",
+      "allMembersDesc": "Dieser Inhalt ist für alle auf dem Server auf der Community-Seite sichtbar.",
+      "canEdit": "Kann bearbeiten",
+      "noRecipients": "Keine Empfänger"
     },
     "revokeDialog": {
       "security": "Sicherheitsbestätigung",
@@ -413,22 +435,70 @@
   "ShareDialog": {
     "trigger": "Teilen",
     "title": "{entity} teilen",
-    "subtitle": "Konfiguriere deinen sicheren Freigabelink",
+    "subtitle": "Freigabeeinstellungen konfigurieren",
+    "scopeLabel": "Teilen mit",
+    "scopePublic": "Öffentlicher Link",
+    "scopePublicDesc": "Einen Link erstellen, den jeder aufrufen kann",
+    "scopeAll": "Alle Mitglieder",
+    "scopeAllDesc": "Sichtbar für alle Servermitglieder auf der Gemeinschaftsseite",
+    "scopeSpecific": "Bestimmte Nutzer",
+    "scopeSpecificDesc": "Nur ausgewählte Nutzer sehen es in ihrem Feed",
     "passwordLabel": "Passwortschutz (optional)",
     "passwordPlaceholder": "Leer lassen für öffentlichen Zugriff",
     "expirationLabel": "Ablaufdatum (optional)",
     "oneTimeTitle": "Einmalige Ansicht",
     "oneTimeDescription": "Zerstört sich nach dem Zugriff selbst",
+    "canEditTitle": "Bearbeitung erlauben",
+    "canEditDescription": "Empfänger können diese Notiz bearbeiten",
+    "recipientsLabel": "Empfänger auswählen",
+    "recipientsPlaceholder": "Nutzer suchen...",
+    "loadingUsers": "Nutzer werden geladen...",
+    "noUsers": "Keine Nutzer gefunden",
+    "selectedCount": "{count} Nutzer ausgewählt",
     "generating": "Wird erstellt...",
+    "share": "Teilen",
     "createLink": "Sicheren Link erstellen",
     "successTitle": "Link erfolgreich geteilt",
+    "successAllTitle": "Mit allen Mitgliedern geteilt",
+    "successSpecificTitle": "Mit ausgewählten Nutzern geteilt",
     "publicLink": "Öffentlicher Zugriffslink",
     "successDescription": "Jeder mit diesem Link kann den Inhalt entsprechend deinen Einstellungen ansehen.",
+    "successAllDescription": "Dieser Inhalt ist jetzt für alle Servermitglieder auf der Gemeinschaftsseite sichtbar.",
+    "successSpecificDescription": "Die ausgewählten Nutzer finden diesen Inhalt in ihrem Gemeinschafts-Feed.",
     "close": "Dialog schließen",
     "entities": {
       "note": "Notiz",
       "board": "Pinnwand"
     }
+  },
+  "UpdateSnapshot": {
+    "update": "Aktualisieren",
+    "updated": "Aktualisiert!",
+    "lastUpdated": "Snapshot: {date}"
+  },
+  "CommunityPage": {
+    "breadcrumb": "Gemeinschaft",
+    "title": "Gemeinschaft",
+    "description": "Von Servermitgliedern geteilte Inhalte",
+    "tabAll": "Server-öffentlich",
+    "tabSharedWithMe": "Mit mir geteilt",
+    "emptyAll": "Noch keine öffentlichen Inhalte",
+    "emptyAllDescription": "Teile eine Notiz oder Pinnwand mit 'Alle Mitglieder', damit sie hier erscheint.",
+    "emptySharedWithMe": "Noch nichts mit dir geteilt",
+    "emptySharedWithMeDescription": "Wenn jemand Inhalte gezielt mit dir teilt, erscheinen sie hier.",
+    "typeNote": "Notiz",
+    "typeBoard": "Pinnwand",
+    "sharedBy": "Geteilt von {name}",
+    "viewButton": "Ansehen",
+    "editButton": "Bearbeiten",
+    "removeButton": "Entfernen",
+    "removeSecurity": "Sicherheitsbestätigung",
+    "removeConfirm": "Geteilten Inhalt entfernen",
+    "removeDescription": "Möchtest du \"{title}\" wirklich aus deiner Liste entfernen? Du kannst den Eigentümer bitten, es erneut zu teilen.",
+    "removeWarning": "Warnung: Du verlierst den Zugriff auf diesen geteilten Inhalt.",
+    "removeCancel": "Abbrechen",
+    "removeRemoving": "Wird entfernt...",
+    "removeConfirmButton": "Entfernen bestätigen"
   },
   "ImageSection": {
     "coverImage": "Titelbild",

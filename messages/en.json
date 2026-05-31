@@ -19,6 +19,7 @@
     "boards": "Boards",
     "profile": "Profile",
     "shared": "Shared",
+    "community": "Community",
     "admin": "Admin",
     "myAccount": "My Account",
     "administration": "Administration",
@@ -348,6 +349,7 @@
       "entity": "Entity",
       "config": "Config",
       "readers": "Unique Readers (W/M/Total)",
+      "readersShort": "w/m/total",
       "created": "Created",
       "actions": "Actions"
     },
@@ -356,15 +358,20 @@
       "description": "Share a note or board to see it here."
     },
     "types": {
+      "publicNote": "Public Note",
       "sharedNote": "Shared Note",
-      "publicBoard": "Public Board"
+      "publicBoard": "Public Board",
+      "sharedBoard": "Shared Board"
     },
     "badges": {
       "password": "Password",
       "expired": "Expired",
       "expires": "Expires",
       "oneTime": "One-Time",
-      "public": "Public"
+      "public": "Public",
+      "server": "Server",
+      "specific": "Specific",
+      "canEdit": "Can Edit"
     },
     "actions": {
       "updatePassword": "Update password",
@@ -372,7 +379,22 @@
       "copyLink": "Copy share link",
       "copiedLink": "Link copied",
       "openPage": "Open shared page",
-      "revoke": "Revoke link"
+      "revoke": "Revoke",
+      "viewRecipients": "View recipients",
+      "viewMetrics": "View metrics"
+    },
+    "metricsDialog": {
+      "title": "View metrics",
+      "weekly": "This week",
+      "monthly": "This month",
+      "total": "All time"
+    },
+    "recipientsDialog": {
+      "title": "Shared with",
+      "allMembers": "All server members",
+      "allMembersDesc": "This content is visible to everyone on the server in the Community page.",
+      "canEdit": "Can edit",
+      "noRecipients": "No recipients"
     },
     "revokeDialog": {
       "security": "Security Verification",
@@ -412,22 +434,70 @@
   "ShareDialog": {
     "trigger": "Share",
     "title": "Share {entity}",
-    "subtitle": "Configure your secure sharing link",
+    "subtitle": "Configure your sharing settings",
+    "scopeLabel": "Share with",
+    "scopePublic": "Public link",
+    "scopePublicDesc": "Generate a link anyone can access",
+    "scopeAll": "All members",
+    "scopeAllDesc": "Visible to all server members in the Community page",
+    "scopeSpecific": "Specific users",
+    "scopeSpecificDesc": "Only selected users will see it in their shared feed",
     "passwordLabel": "Password Protection (Optional)",
     "passwordPlaceholder": "Leave empty for public",
     "expirationLabel": "Expiration Date (Optional)",
     "oneTimeTitle": "One-time view",
     "oneTimeDescription": "Self-destructs after access",
+    "canEditTitle": "Allow editing",
+    "canEditDescription": "Recipients can edit this note",
+    "recipientsLabel": "Select Recipients",
+    "recipientsPlaceholder": "Search users...",
+    "loadingUsers": "Loading users...",
+    "noUsers": "No users found",
+    "selectedCount": "{count} user{count, plural, one {} other {s}} selected",
     "generating": "Generating...",
+    "share": "Share",
     "createLink": "Create Secure Link",
     "successTitle": "Link Shared Successfully",
+    "successAllTitle": "Shared with All Members",
+    "successSpecificTitle": "Shared with Selected Users",
     "publicLink": "Public Access Link",
     "successDescription": "Anyone with this link can view the content based on your settings.",
+    "successAllDescription": "This content is now visible to all server members in the Community page.",
+    "successSpecificDescription": "The selected users can find this content in their Community feed.",
     "close": "Close Dialog",
     "entities": {
       "note": "Note",
       "board": "Board"
     }
+  },
+  "UpdateSnapshot": {
+    "update": "Update",
+    "updated": "Updated!",
+    "lastUpdated": "Snapshot: {date}"
+  },
+  "CommunityPage": {
+    "breadcrumb": "Community",
+    "title": "Community",
+    "description": "Content shared by server members",
+    "tabAll": "Server public",
+    "tabSharedWithMe": "Shared with me",
+    "emptyAll": "No public content yet",
+    "emptyAllDescription": "Share a note or board with 'All members' to make it appear here.",
+    "emptySharedWithMe": "Nothing shared with you yet",
+    "emptySharedWithMeDescription": "When someone shares content specifically with you, it will appear here.",
+    "typeNote": "Note",
+    "typeBoard": "Board",
+    "sharedBy": "Shared by {name}",
+    "viewButton": "View",
+    "editButton": "Edit",
+    "removeButton": "Remove",
+    "removeSecurity": "Security Verification",
+    "removeConfirm": "Remove Shared Content",
+    "removeDescription": "Are you sure you want to remove \"{title}\" from your list? You can ask the owner to share it again.",
+    "removeWarning": "Warning: This will revoke your access to this shared content.",
+    "removeCancel": "Cancel",
+    "removeRemoving": "Removing...",
+    "removeConfirmButton": "Confirm Remove"
   },
   "ImageSection": {
     "coverImage": "Cover Image",

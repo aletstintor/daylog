@@ -9,6 +9,7 @@ import { renderWithIntl } from '@/utils/test/renderWithIntl';
 vi.mock('../lib/actions', () => ({
   deleteShare: vi.fn(),
   updateSharePassword: vi.fn(),
+  createOrUpdateSnapshot: vi.fn(),
 }));
 
 // Mock next/navigation
@@ -35,6 +36,10 @@ describe('SharesTable', () => {
       entityId: 101,
       viewCount: 10,
       views: [],
+      snapshotUpdatedAt: null,
+      scope: 'PUBLIC',
+      canEdit: false,
+      recipients: [],
       metrics: { weekly: 5, monthly: 10, total: 100 },
     },
     {
@@ -49,6 +54,10 @@ describe('SharesTable', () => {
       entityId:102,
       viewCount: 5,
       views: [],
+      snapshotUpdatedAt: null,
+      scope: 'PUBLIC',
+      canEdit: false,
+      recipients: [],
       metrics: { weekly: 0, monthly: 0, total: 50 },
     },
   ] as SharedContent[];

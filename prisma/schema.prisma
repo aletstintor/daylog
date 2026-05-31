@@ -36,6 +36,8 @@ model User {
   encryptionEnabled   Boolean         @default(false)
   encryptionSalt      String?
   encryptedDataLocked Boolean         @default(false)
+  createdShares       Share[]         @relation("CreatedShares")
+  receivedShares      ShareRecipient[]
 }
 
 model Session {
@@ -110,18 +112,37 @@ model ChangeComment {
 }
 
 model Share {
-  id          String    @id @default(cuid())
-  entityType  String    // "BOARD" or "NOTE"
-  entityId    Int
-  password    String?   // Hashed password
-  expiresAt   DateTime?
-  oneTime     Boolean   @default(false)
-  viewCount   Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  views       ShareView[]
+  id                String           @id @default(cuid())
+  entityType        String           // "BOARD" or "NOTE"
+  entityId          Int
+  password          String?          // Hashed password
+  expiresAt         DateTime?
+  oneTime           Boolean          @default(false)
+  viewCount         Int              @default(0)
+  scope             String           @default("PUBLIC") // "PUBLIC" | "ALL" | "SPECIFIC"
+  canEdit           Boolean          @default(false)    // Allow recipients to edit (SPECIFIC scope only)
+  sharedBy          Int?
+  snapshot          String?          // JSON snapshot of decrypted content
+  snapshotUpdatedAt DateTime?        // When the snapshot was last refreshed
+  creator           User?            @relation("CreatedShares", fields: [sharedBy], references: [id], onDelete: SetNull)
+  recipients        ShareRecipient[]
+  views             ShareView[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
   @@index([entityId, entityType])
+  @@index([scope])
+}
+
+model ShareRecipient {
+  id      Int    @id @default(autoincrement())
+  shareId String
+  share   Share  @relation(fields: [shareId], references: [id], onDelete: Cascade)
+  userId  Int
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([shareId, userId])
+  @@index([userId])
 }
 
 model ShareView {

@@ -60,6 +60,12 @@ export async function deleteBoard(board: Board): Promise<Board | null> {
     return null;
   }
 
+  // Delete shares for the board and all its notes (Share uses entityId/entityType, no DB cascade)
+  const noteIds = (await prisma.note.findMany({ where: { boardsId: board.id }, select: { id: true } })).map((n) => n.id);
+  await prisma.share.deleteMany({
+    where: { OR: [{ entityType: 'BOARD', entityId: board.id }, { entityType: 'NOTE', entityId: { in: noteIds } }] },
+  });
+
   const deleted = await prisma.board.delete({
     where: { id: board.id, userId: user?.id },
   });
@@ -122,6 +128,22 @@ export async function getBoard(boardId: number): Promise<Board | null> {
   const board = await prisma.board.findFirst({
     where: { id: boardId, userId: user?.id },
   });
+  if (!board || !user.encryptionEnabled) return board;
+  const key = await getCurrentSessionKey();
+  if (!key) return board;
+  return decryptBoardFields(board, key);
+}
+
+export async function getBoardForNoteRecipient(noteId: number): Promise<Board | null> {
+  const { user } = await getCurrentSession();
+  if (!user) return null;
+  const hasAccess = await prisma.share.findFirst({
+    where: { entityType: 'NOTE', entityId: noteId, scope: 'SPECIFIC', recipients: { some: { userId: user.id } } },
+  });
+  if (!hasAccess) return null;
+  const note = await prisma.note.findUnique({ where: { id: noteId }, select: { boardsId: true } });
+  if (!note) return null;
+  const board = await prisma.board.findUnique({ where: { id: note.boardsId ?? undefined } });
   if (!board || !user.encryptionEnabled) return board;
   const key = await getCurrentSessionKey();
   if (!key) return board;

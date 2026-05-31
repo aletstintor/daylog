@@ -9,6 +9,10 @@ export interface SharedContent {
   expiresAt: Date | null;
   oneTime: boolean;
   viewCount: number;
+  scope: string;
+  canEdit: boolean;
+  snapshotUpdatedAt: Date | null;
+  recipients: { id: number; name: string | null; email: string }[];
   metrics: {
     weekly: number;
     monthly: number;

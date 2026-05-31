@@ -7,7 +7,7 @@ import { Note, Picture, Prisma } from '@/prisma/generated/client';
 import { saveAndGetImageFile } from '@/utils/file';
 import { removeFile } from '@/utils/storage';
 import { isBase64, isUrl } from '@/utils/text';
-import { encryptNoteFields, decryptNoteFields, encryptField, decryptField } from '@/utils/encryption';
+import { encryptNoteFields, decryptNoteFields, decryptBoardFields, encryptField, decryptField } from '@/utils/encryption';
 
 import fs from 'fs';
 import { NoteWithBoards } from './types';
@@ -43,48 +43,67 @@ export async function updateNote(note: Note): Promise<Note | null> {
     return null;
   }
 
-  const key = user.encryptionEnabled ? await getCurrentSessionKey() : null;
+  // Allow update if user is owner OR has a canEdit share for this note
+  const isOwner = !!(await prisma.note.findFirst({ where: { id: note.id, boards: { userId: user.id } } }));
+  const editShare = !isOwner ? await prisma.share.findFirst({
+    where: { entityType: 'NOTE', entityId: note.id, canEdit: true, scope: 'SPECIFIC', recipients: { some: { userId: user.id } } },
+    select: { id: true, snapshot: true },
+  }) : null;
+
+  if (!isOwner && !editShare) return null;
+
+  // Recipients save in plaintext to avoid corrupting the owner's encryption.
+  // Owners encrypt normally with their own session key.
+  const key = isOwner && user.encryptionEnabled ? await getCurrentSessionKey() : null;
 
   // Get the current note content before updating
-  const currentNote = await prisma.note.findUnique({
-    where: { id: note.id },
-  });
+  const currentNote = await prisma.note.findUnique({ where: { id: note.id } });
 
-  // Decrypt existing content for diff comparison
-  const currentContentPlain = currentNote?.content
-    ? (key ? decryptField(currentNote.content, key) : currentNote.content)
-    : '';
+  // For diff: owner decrypts from DB; recipient reads from snapshot (already plaintext)
+  const currentContentPlain = (() => {
+    if (!currentNote?.content) return '';
+    if (isOwner && key) return decryptField(currentNote.content, key);
+    if (!isOwner && editShare?.snapshot) {
+      try { return (JSON.parse(editShare.snapshot) as { content?: string }).content ?? currentNote.content; } catch { return currentNote.content; }
+    }
+    return currentNote.content;
+  })();
   const newContentPlain = note.content ?? '';
 
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { id, boards, boardsId, ...updateData } = note as NoteWithBoards;
-  const encryptedData = key ? encryptNoteFields(updateData, key) : updateData;
+  const dataToSave = key ? encryptNoteFields(updateData, key) : updateData;
 
   const updatedNote = await prisma.note.update({
-    where: { id, boards: { userId: user?.id } },
-    data: { ...encryptedData },
+    where: { id },
+    data: { ...dataToSave },
   });
 
   // Track the change if content was modified
   if (currentNote && currentContentPlain !== newContentPlain) {
     const { computeDiff, areTextsIdentical } = await import('@/utils/diff');
 
-    // Only save if there's an actual change
     if (!areTextsIdentical(currentContentPlain, newContentPlain)) {
       const diffPatch = computeDiff(currentContentPlain, newContentPlain);
-      const previousContentToStore = key
-        ? encryptField(currentContentPlain, key)
-        : currentContentPlain;
+      const previousContentToStore = key ? encryptField(currentContentPlain, key) : currentContentPlain;
 
       await prisma.noteChange.create({
-        data: {
-          noteId: note.id,
-          userId: user.id,
-          diffPatch,
-          previousContent: previousContentToStore,
-        },
+        data: { noteId: note.id, userId: user.id, diffPatch, previousContent: previousContentToStore },
       });
     }
+  }
+
+  // Keep snapshot fresh so recipients always see decrypted content
+  const shareToUpdate = editShare ?? (isOwner ? await prisma.share.findFirst({
+    where: { entityType: 'NOTE', entityId: note.id, canEdit: true, scope: 'SPECIFIC' },
+    select: { id: true, snapshot: true },
+  }) : null);
+  if (shareToUpdate) {
+    try {
+      const existing = shareToUpdate.snapshot ? (JSON.parse(shareToUpdate.snapshot) as Record<string, unknown>) : {};
+      const updatedSnapshot = JSON.stringify({ ...existing, title: updateData.title, content: newContentPlain });
+      await prisma.share.update({ where: { id: shareToUpdate.id }, data: { snapshot: updatedSnapshot, snapshotUpdatedAt: new Date() } });
+    } catch { /* non-critical */ }
   }
 
   revalidatePath(`/boards/${boardsId}/notes`);
@@ -98,6 +117,8 @@ export async function deleteNote(note: Note): Promise<Note | null> {
   if (!user) {
     return null;
   }
+
+  await prisma.share.deleteMany({ where: { entityType: 'NOTE', entityId: note.id } });
 
   const deleted = await prisma.note.delete({
     where: { id: note.id, boards: { userId: user?.id } },
@@ -142,7 +163,13 @@ export async function getNotes(
   if (!user.encryptionEnabled) return notes;
   const key = await getCurrentSessionKey();
   if (!key) return notes;
-  return notes.map((n) => decryptNoteFields(n, key));
+  return notes.map((n) => {
+    const decrypted = decryptNoteFields(n, key);
+    if (decrypted.boards) {
+      return { ...decrypted, boards: decryptBoardFields(decrypted.boards, key) };
+    }
+    return decrypted;
+  });
 }
 
 export async function setUserNotesSort(sort: string): Promise<void> {
@@ -167,6 +194,36 @@ export async function getNote(noteId: number): Promise<Note | null> {
   const key = await getCurrentSessionKey();
   if (!key) return note;
   return decryptNoteFields(note, key);
+}
+
+export async function getEditShareForNote(noteId: number): Promise<{ shareId: string } | null> {
+  const { user } = await getCurrentSession();
+  if (!user) return null;
+  const share = await prisma.share.findFirst({
+    where: { entityType: 'NOTE', entityId: noteId, canEdit: true, scope: 'SPECIFIC', recipients: { some: { userId: user.id } } },
+    select: { id: true },
+  });
+  return share ? { shareId: share.id } : null;
+}
+
+export async function getNoteForRecipient(noteId: number): Promise<Note | null> {
+  const { user } = await getCurrentSession();
+  if (!user) return null;
+  const share = await prisma.share.findFirst({
+    where: { entityType: 'NOTE', entityId: noteId, scope: 'SPECIFIC', recipients: { some: { userId: user.id } } },
+    select: { snapshot: true },
+  });
+  if (!share) return null;
+  const note = await prisma.note.findUnique({ where: { id: noteId } });
+  if (!note) return null;
+  // Use snapshot for decrypted title/content — the note may be encrypted with the owner's key
+  if (share.snapshot) {
+    try {
+      const snap = JSON.parse(share.snapshot) as { title?: string; content?: string };
+      return { ...note, title: snap.title ?? note.title, content: snap.content ?? note.content };
+    } catch { /* fall through to raw note */ }
+  }
+  return note;
 }
 
 export async function saveImage({
@@ -195,10 +252,13 @@ export async function saveImage({
       removeFile(existentFileName);
     }
 
+    const note = await getNoteWithAccess(noteId, user.id);
+    if (!note) return null;
+
     const urlKeyOrPath = await saveAndGetImageFile(imageUrl);
 
     await prisma.note.update({
-      where: { id: noteId, boards: { userId: user?.id } },
+      where: { id: noteId },
       data: { imageUrl: urlKeyOrPath },
     });
 
@@ -220,10 +280,13 @@ export async function deleteImage(
       return;
     }
 
+    const note = await getNoteWithAccess(noteId, user.id);
+    if (!note) return;
+
     const removed = removeFile(filePath);
     if (removed) {
       await prisma.note.update({
-        where: { id: noteId, boards: { userId: user?.id } },
+        where: { id: noteId },
         data: { imageUrl: null },
       });
     }
@@ -258,13 +321,8 @@ export async function savePicture({
       throw new Error('Failed to save image');
     }
 
-    const note = await prisma.note.findUnique({
-      where: { id: noteId, boards: { userId: user?.id } },
-    });
-
-    if (!note) {
-      throw new Error('Note not found');
-    }
+    const note = await getNoteWithAccess(noteId, user.id);
+    if (!note) throw new Error('Note not found');
 
     await prisma.picture.create({
       data: { notesId: note.id, imageUrl: urlKeyOrPath },
@@ -288,13 +346,8 @@ export async function deletePicture(
       return;
     }
 
-    const note = await prisma.note.findUnique({
-      where: { id: noteId, boards: { userId: user?.id } },
-    });
-
-    if (!note) {
-      throw new Error('Note not found');
-    }
+    const note = await getNoteWithAccess(noteId, user.id);
+    if (!note) throw new Error('Note not found');
 
     const picture = await prisma.picture.findUnique({
       where: { id: pictureId },
@@ -323,13 +376,8 @@ export async function getPictures(noteId: number): Promise<Picture[]> {
       return [];
     }
 
-    const note = await prisma.note.findUnique({
-      where: { id: noteId, boards: { userId: user?.id } },
-    });
-
-    if (!note) {
-      throw new Error('Note not found');
-    }
+    const note = await getNoteWithAccess(noteId, user.id);
+    if (!note) throw new Error('Note not found');
 
     const pictures = await prisma.picture.findMany({
       where: { notesId: noteId },
@@ -340,6 +388,18 @@ export async function getPictures(noteId: number): Promise<Picture[]> {
     console.error(e);
     return [];
   }
+}
+
+// Returns the note if the user is the owner OR a canEdit share recipient
+async function getNoteWithAccess(noteId: number, userId: number) {
+  const note = await prisma.note.findUnique({ where: { id: noteId } });
+  if (!note) return null;
+  const isOwner = await prisma.board.findFirst({ where: { id: note.boardsId ?? undefined, userId } });
+  if (isOwner) return note;
+  const hasEditShare = await prisma.share.findFirst({
+    where: { entityType: 'NOTE', entityId: noteId, canEdit: true, scope: 'SPECIFIC', recipients: { some: { userId } } },
+  });
+  return hasEditShare ? note : null;
 }
 
 // ============ Change History Management ============
@@ -357,13 +417,8 @@ export async function getNoteChanges(
       return [];
     }
 
-    const note = await prisma.note.findUnique({
-      where: { id: noteId, boards: { userId: user?.id } },
-    });
-
-    if (!note) {
-      throw new Error('Note not found');
-    }
+    const note = await getNoteWithAccess(noteId, user.id);
+    if (!note) throw new Error('Note not found');
 
     const changes = await prisma.noteChange.findMany({
       where: { noteId },
@@ -398,18 +453,18 @@ export async function deleteNoteChange(changeId: number): Promise<boolean> {
 
     const change = await prisma.noteChange.findUnique({
       where: { id: changeId },
-      include: { note: { include: { boards: true } } },
+      include: { note: true },
     });
 
-    if (!change || change.note.boards?.userId !== user.id) {
-      return false;
-    }
+    if (!change) return false;
+    const noteAccess = await prisma.note.findFirst({ where: { id: change.noteId, boards: { userId: user.id } } });
+    if (!noteAccess) return false;
 
     await prisma.noteChange.delete({
       where: { id: changeId },
     });
 
-    revalidatePath(`/boards/${change.note.boardsId}/notes/${change.noteId}`);
+    revalidatePath(`/boards/${noteAccess.boardsId}/notes/${change.noteId}`);
     return true;
   } catch (e) {
     console.error(e);
@@ -427,13 +482,8 @@ export async function clearNoteHistory(noteId: number): Promise<boolean> {
       return false;
     }
 
-    const note = await prisma.note.findUnique({
-      where: { id: noteId, boards: { userId: user?.id } },
-    });
-
-    if (!note) {
-      return false;
-    }
+    const note = await prisma.note.findFirst({ where: { id: noteId, boards: { userId: user.id } } });
+    if (!note) return false;
 
     await prisma.noteChange.deleteMany({
       where: { noteId },
@@ -462,13 +512,8 @@ export async function restoreToVersion(
       return { success: false, error: 'User not authenticated' };
     }
 
-    const note = await prisma.note.findUnique({
-      where: { id: noteId, boards: { userId: user?.id } },
-    });
-
-    if (!note) {
-      return { success: false, error: 'Note not found' };
-    }
+    const note = await getNoteWithAccess(noteId, user.id);
+    if (!note) return { success: false, error: 'Note not found' };
 
     const change = await prisma.noteChange.findUnique({
       where: { id: changeId },
@@ -543,12 +588,12 @@ export async function addChangeComment(
 
     const change = await prisma.noteChange.findUnique({
       where: { id: changeId },
-      include: { note: { include: { boards: true } } },
+      select: { noteId: true, note: { select: { boardsId: true } } },
     });
 
-    if (!change || change.note.boards?.userId !== user.id) {
-      return null;
-    }
+    if (!change) return null;
+    const noteAccess = await getNoteWithAccess(change.noteId, user.id);
+    if (!noteAccess) return null;
 
     const comment = await prisma.changeComment.create({
       data: {

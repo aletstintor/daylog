@@ -19,6 +19,7 @@
     "boards": "Tableaux",
     "profile": "Profil",
     "shared": "Partage",
+    "community": "Communaute",
     "admin": "Admin",
     "myAccount": "Mon compte",
     "administration": "Administration",
@@ -349,6 +350,7 @@
       "entity": "Element",
       "config": "Configuration",
       "readers": "Lecteurs uniques (F/H/Total)",
+      "readersShort": "f/h/total",
       "created": "Cree",
       "actions": "Actions"
     },
@@ -357,15 +359,20 @@
       "description": "Partagez une note ou un tableau pour le voir ici."
     },
     "types": {
-      "sharedNote": "Note partagee",
-      "publicBoard": "Tableau public"
+      "publicNote": "Note publique",
+      "sharedNote": "Note partagée",
+      "publicBoard": "Tableau public",
+      "sharedBoard": "Tableau partagé"
     },
     "badges": {
       "password": "Mot de passe",
       "expired": "Expire",
       "expires": "Expire le",
       "oneTime": "Usage unique",
-      "public": "Public"
+      "public": "Public",
+      "server": "Serveur",
+      "specific": "Spécifique",
+      "canEdit": "Peut modifier"
     },
     "actions": {
       "updatePassword": "Mettre a jour le mot de passe",
@@ -373,7 +380,22 @@
       "copyLink": "Copier le lien de partage",
       "copiedLink": "Lien copie",
       "openPage": "Ouvrir la page partagee",
-      "revoke": "Revoquer le lien"
+      "revoke": "Revoquer",
+      "viewRecipients": "Voir les destinataires",
+      "viewMetrics": "Voir les métriques"
+    },
+    "metricsDialog": {
+      "title": "Métriques",
+      "weekly": "Cette semaine",
+      "monthly": "Ce mois",
+      "total": "Total"
+    },
+    "recipientsDialog": {
+      "title": "Partagé avec",
+      "allMembers": "Tous les membres du serveur",
+      "allMembersDesc": "Ce contenu est visible par tous sur le serveur dans la page Communauté.",
+      "canEdit": "Peut modifier",
+      "noRecipients": "Aucun destinataire"
     },
     "revokeDialog": {
       "security": "Verification de securite",
@@ -413,22 +435,70 @@
   "ShareDialog": {
     "trigger": "Partager",
     "title": "Partager {entity}",
-    "subtitle": "Configurez votre lien de partage securise",
+    "subtitle": "Configurez les parametres de partage",
+    "scopeLabel": "Partager avec",
+    "scopePublic": "Lien public",
+    "scopePublicDesc": "Generer un lien accessible par tous",
+    "scopeAll": "Tous les membres",
+    "scopeAllDesc": "Visible pour tous les membres du serveur sur la page Communaute",
+    "scopeSpecific": "Utilisateurs specifiques",
+    "scopeSpecificDesc": "Seuls les utilisateurs selectionnes le verront dans leur fil",
     "passwordLabel": "Protection par mot de passe (optionnel)",
     "passwordPlaceholder": "Laissez vide pour un acces public",
     "expirationLabel": "Date d'expiration (optionnel)",
     "oneTimeTitle": "Vue unique",
     "oneTimeDescription": "S'autodetruit apres acces",
+    "canEditTitle": "Autoriser l'édition",
+    "canEditDescription": "Les destinataires peuvent modifier cette note",
+    "recipientsLabel": "Selectionner les destinataires",
+    "recipientsPlaceholder": "Rechercher des utilisateurs...",
+    "loadingUsers": "Chargement des utilisateurs...",
+    "noUsers": "Aucun utilisateur trouve",
+    "selectedCount": "{count} utilisateur{count, plural, one {} other {s}} selectionne{count, plural, one {} other {s}}",
     "generating": "Generation...",
+    "share": "Partager",
     "createLink": "Creer un lien securise",
     "successTitle": "Lien partage avec succes",
+    "successAllTitle": "Partage avec tous les membres",
+    "successSpecificTitle": "Partage avec les utilisateurs selectionnes",
     "publicLink": "Lien d'acces public",
     "successDescription": "Toute personne possedant ce lien peut consulter le contenu selon vos parametres.",
+    "successAllDescription": "Ce contenu est maintenant visible pour tous les membres du serveur sur la page Communaute.",
+    "successSpecificDescription": "Les utilisateurs selectionnes peuvent trouver ce contenu dans leur fil Communaute.",
     "close": "Fermer la boite de dialogue",
     "entities": {
       "note": "la note",
       "board": "le tableau"
     }
+  },
+  "UpdateSnapshot": {
+    "update": "Actualiser",
+    "updated": "Actualisé !",
+    "lastUpdated": "Snapshot : {date}"
+  },
+  "CommunityPage": {
+    "breadcrumb": "Communaute",
+    "title": "Communaute",
+    "description": "Contenu partage par les membres du serveur",
+    "tabAll": "Public du serveur",
+    "tabSharedWithMe": "Partage avec moi",
+    "emptyAll": "Aucun contenu public pour l'instant",
+    "emptyAllDescription": "Partagez une note ou un tableau avec 'Tous les membres' pour qu'il apparaisse ici.",
+    "emptySharedWithMe": "Rien n'a encore ete partage avec vous",
+    "emptySharedWithMeDescription": "Lorsque quelqu'un partage du contenu specifiquement avec vous, il apparaitra ici.",
+    "typeNote": "Note",
+    "typeBoard": "Tableau",
+    "sharedBy": "Partage par {name}",
+    "viewButton": "Voir",
+    "editButton": "Modifier",
+    "removeButton": "Supprimer",
+    "removeSecurity": "Vérification de sécurité",
+    "removeConfirm": "Supprimer le contenu partagé",
+    "removeDescription": "Êtes-vous sûr de vouloir supprimer \"{title}\" de votre liste ? Vous pouvez demander au propriétaire de le partager à nouveau.",
+    "removeWarning": "Avertissement : Vous perdrez l'accès à ce contenu partagé.",
+    "removeCancel": "Annuler",
+    "removeRemoving": "Suppression...",
+    "removeConfirmButton": "Confirmer la suppression"
   },
   "ImageSection": {
     "coverImage": "Image de couverture",

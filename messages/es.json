@@ -19,6 +19,7 @@
     "boards": "Tableros",
     "profile": "Perfil",
     "shared": "Compartido",
+    "community": "Comunidad",
     "admin": "Admin",
     "myAccount": "Mi cuenta",
     "administration": "Administración",
@@ -348,6 +349,7 @@
       "entity": "Entidad",
       "config": "Configuración",
       "readers": "Lectores únicos (S/M/Total)",
+      "readersShort": "s/m/total",
       "created": "Creado",
       "actions": "Acciones"
     },
@@ -356,15 +358,20 @@
       "description": "Comparte una nota o un tablero para verlo aquí."
     },
     "types": {
+      "publicNote": "Nota pública",
       "sharedNote": "Nota compartida",
-      "publicBoard": "Tablero público"
+      "publicBoard": "Tablero público",
+      "sharedBoard": "Tablero compartido"
     },
     "badges": {
       "password": "Contraseña",
       "expired": "Vencido",
       "expires": "Vence",
       "oneTime": "Un solo uso",
-      "public": "Público"
+      "public": "Público",
+      "server": "Servidor",
+      "specific": "Específico",
+      "canEdit": "Puede editar"
     },
     "actions": {
       "updatePassword": "Actualizar contraseña",
@@ -372,7 +379,22 @@
       "copyLink": "Copiar enlace compartido",
       "copiedLink": "Enlace copiado",
       "openPage": "Abrir página compartida",
-      "revoke": "Revocar enlace"
+      "revoke": "Revocar",
+      "viewRecipients": "Ver destinatarios",
+      "viewMetrics": "Ver métricas"
+    },
+    "metricsDialog": {
+      "title": "Métricas",
+      "weekly": "Esta semana",
+      "monthly": "Este mes",
+      "total": "Total"
+    },
+    "recipientsDialog": {
+      "title": "Compartido con",
+      "allMembers": "Todos los miembros del servidor",
+      "allMembersDesc": "Este contenido es visible para todos en el servidor en la página de Comunidad.",
+      "canEdit": "Puede editar",
+      "noRecipients": "Sin destinatarios"
     },
     "revokeDialog": {
       "security": "Verificación de seguridad",
@@ -412,22 +434,70 @@
   "ShareDialog": {
     "trigger": "Compartir",
     "title": "Compartir {entity}",
-    "subtitle": "Configura tu enlace seguro para compartir",
+    "subtitle": "Configura los ajustes para compartir",
+    "scopeLabel": "Compartir con",
+    "scopePublic": "Enlace público",
+    "scopePublicDesc": "Genera un enlace accesible para cualquiera",
+    "scopeAll": "Todos los miembros",
+    "scopeAllDesc": "Visible para todos los miembros del servidor en la página Comunidad",
+    "scopeSpecific": "Usuarios específicos",
+    "scopeSpecificDesc": "Solo los usuarios seleccionados lo verán en su feed",
     "passwordLabel": "Protección con contraseña (opcional)",
     "passwordPlaceholder": "Déjalo vacío para hacerlo público",
     "expirationLabel": "Fecha de vencimiento (opcional)",
     "oneTimeTitle": "Vista de un solo uso",
     "oneTimeDescription": "Se autodestruye después del acceso",
+    "canEditTitle": "Permitir edición",
+    "canEditDescription": "Los destinatarios pueden editar esta nota",
+    "recipientsLabel": "Seleccionar destinatarios",
+    "recipientsPlaceholder": "Buscar usuarios...",
+    "loadingUsers": "Cargando usuarios...",
+    "noUsers": "No se encontraron usuarios",
+    "selectedCount": "{count} usuario{count, plural, one {} other {s}} seleccionado{count, plural, one {} other {s}}",
     "generating": "Generando...",
+    "share": "Compartir",
     "createLink": "Crear enlace seguro",
     "successTitle": "Enlace compartido correctamente",
+    "successAllTitle": "Compartido con todos los miembros",
+    "successSpecificTitle": "Compartido con usuarios seleccionados",
     "publicLink": "Enlace de acceso público",
     "successDescription": "Cualquiera con este enlace puede ver el contenido según tu configuración.",
+    "successAllDescription": "Este contenido ahora es visible para todos los miembros del servidor en la página Comunidad.",
+    "successSpecificDescription": "Los usuarios seleccionados pueden encontrar este contenido en su feed de Comunidad.",
     "close": "Cerrar diálogo",
     "entities": {
       "note": "nota",
       "board": "tablero"
     }
+  },
+  "UpdateSnapshot": {
+    "update": "Actualizar",
+    "updated": "¡Actualizado!",
+    "lastUpdated": "Snapshot: {date}"
+  },
+  "CommunityPage": {
+    "breadcrumb": "Comunidad",
+    "title": "Comunidad",
+    "description": "Contenido compartido por los miembros del servidor",
+    "tabAll": "Público del servidor",
+    "tabSharedWithMe": "Compartido conmigo",
+    "emptyAll": "Aún no hay contenido público",
+    "emptyAllDescription": "Comparte una nota o tablero con 'Todos los miembros' para que aparezca aquí.",
+    "emptySharedWithMe": "Nadie ha compartido nada contigo aún",
+    "emptySharedWithMeDescription": "Cuando alguien comparta contenido específicamente contigo, aparecerá aquí.",
+    "typeNote": "Nota",
+    "typeBoard": "Tablero",
+    "sharedBy": "Compartido por {name}",
+    "viewButton": "Ver",
+    "editButton": "Editar",
+    "removeButton": "Eliminar",
+    "removeSecurity": "Verificación de seguridad",
+    "removeConfirm": "Eliminar contenido compartido",
+    "removeDescription": "¿Estás seguro de que deseas eliminar \"{title}\" de tu lista? Puedes pedirle al propietario que lo comparta de nuevo.",
+    "removeWarning": "Advertencia: Perderás el acceso a este contenido compartido.",
+    "removeCancel": "Cancelar",
+    "removeRemoving": "Eliminando...",
+    "removeConfirmButton": "Confirmar eliminación"
   },
   "ImageSection": {
     "coverImage": "Imagen de portada",

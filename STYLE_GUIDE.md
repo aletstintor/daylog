@@ -92,7 +92,39 @@ To maintain the "clean and spacious" look from the dashboard, all forms must fol
 
 ---
 
-## 8. Implementation Rules for AI
+## 8. Destructive Confirmation Dialogs
+
+Use this pattern for **any action that is permanent or removes access** (delete note, delete board, remove shared content, revoke permissions, etc.). Do NOT use `AlertDialog` — always use `Dialog` with the structure below.
+
+### Structure
+
+```
+Dialog (max-w-[480px], p-10)
+├── DialogHeader (mb-6)
+│   ├── Label — "Security Verification" in text-destructive
+│   └── DialogTitle — action name (e.g. "Delete Note", "Remove Shared Content")
+├── Body (space-y-8)
+│   ├── <p> — plain-language description of what will happen, mentions the item name
+│   └── Warning box — bg-[var(--color-accent-red)], rounded-[12px], border border-destructive/20
+│       └── <p> — AlertOctagon icon + short warning text, text-[12px] text-destructive font-medium
+└── DialogFooter (mt-8)
+    ├── Cancel button — variant="ghost", rounded-[12px], text-muted-foreground, font-bold
+    └── Confirm button — variant="danger", font-bold, px-8, shadow-none
+```
+
+### Rules
+
+1. **Always use `Dialog` with `open`/`onOpenChange` state** — not `AlertDialog`, which lacks the required visual structure.
+2. **Label above title** reads "Security Verification" (translated) in `text-destructive`.
+3. **Warning box** uses `bg-[var(--color-accent-red)]` and an `AlertOctagon` icon from `lucide-react`.
+4. **Cancel** is ghost, never outlined; it closes the dialog without side effects.
+5. **Confirm** uses `variant="danger"` (not `variant="destructive"`). Show a loading label (e.g. "Deleting...") while the async action runs.
+6. **Close the dialog** after a successful action, before calling `router.refresh()`.
+7. **Translations** must include: `security`, `title/confirm`, `description` (with item name interpolation), `warning`, `cancel`, `deleting/removing` (loading state), `confirmButton`.
+
+---
+
+## 10. Implementation Rules for AI
 
 1. **Consistency Check:** Every new page must use the #000000 Bold H1 and the #6B7280 secondary text.
 2. **Form Generation:** When the `frontend-design` skill generates a form, it must ensure all `input`, `select`, and `textarea` elements share the exact same `12px` border-radius and `#E5E7EB` border color.

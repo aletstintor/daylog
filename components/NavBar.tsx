@@ -7,9 +7,10 @@ import {
   UserIcon,
   ShieldCheckIcon,
   ShareIcon,
+  GlobeAltIcon,
 } from '@heroicons/react/24/outline';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
@@ -22,11 +23,13 @@ interface NavBarProps {
 export default function NavBar({ user, isCollapsed = false }: NavBarProps) {
   const t = useTranslations('Navigation');
   const path = usePathname() || '/';
+  const searchParams = useSearchParams();
   const adminPattern = /^\/admin\/?$/;
   const homePattern = /^\/$/;
   const profilePattern = /^\/profile\/[a-zA-Z0-9_-]+\/?$/;
   const boardPattern = /^\/boards(\/[a-zA-Z0-9_-]+)?\/?$/;
   const notePattern = /^\/boards\/[a-zA-Z0-9_-]+\/notes(\/[a-zA-Z0-9_-]+)?\/?$/;
+  const isCommunityNote = notePattern.test(path) && searchParams.get('ref') === 'community';
 
   const navItems = [
     {
@@ -39,7 +42,7 @@ export default function NavBar({ user, isCollapsed = false }: NavBarProps) {
       name: t('boards'),
       href: '/boards',
       icon: Squares2X2Icon,
-      active: boardPattern.test(path) || notePattern.test(path),
+      active: !isCommunityNote && (boardPattern.test(path) || notePattern.test(path)),
     },
     {
       name: t('profile'),
@@ -52,6 +55,12 @@ export default function NavBar({ user, isCollapsed = false }: NavBarProps) {
       href: '/shared',
       icon: ShareIcon,
       active: path.startsWith('/shared'),
+    },
+    {
+      name: t('community'),
+      href: '/community',
+      icon: GlobeAltIcon,
+      active: path.startsWith('/community') || isCommunityNote,
     },
   ];
 

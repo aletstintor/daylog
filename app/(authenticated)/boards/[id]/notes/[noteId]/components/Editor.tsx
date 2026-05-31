@@ -25,12 +25,14 @@ import { useTranslations } from 'next-intl';
 type NoteEditorType = {
   note: Note;
   isOwner?: boolean;
+  canDeleteHistory?: boolean;
   currentUserId?: number;
 };
 
 export default function Editor({
   note,
   isOwner,
+  canDeleteHistory,
   currentUserId,
 }: NoteEditorType) {
   const router = useRouter();
@@ -184,7 +186,7 @@ export default function Editor({
           {showHistory && (
             <ChangeHistorySidebar
               noteId={note.id}
-              isOwner={isOwner}
+              isOwner={canDeleteHistory ?? isOwner}
               currentUserId={currentUserId}
               isOpen={showHistory}
               onClose={() => setShowHistory(false)}

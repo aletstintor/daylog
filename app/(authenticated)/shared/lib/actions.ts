@@ -14,9 +14,12 @@ export async function createShare(data: {
   password?: string;
   expiresAt?: Date | null;
   oneTime?: boolean;
+  scope?: string;
+  recipientIds?: number[];
+  canEdit?: boolean;
 }) {
-  const { user } = await getCurrentSession();
-  if (!user) throw new Error('Unauthorized');
+  const { session, user } = await getCurrentSession();
+  if (!user || !session) throw new Error('Unauthorized');
 
   // Verify ownership
   if (data.entityType === 'NOTE') {
@@ -31,28 +34,128 @@ export async function createShare(data: {
     if (!board) throw new Error('Board not found or access denied');
   }
 
+  const scope = data.scope || 'PUBLIC';
+  const canEdit = scope === 'SPECIFIC' && data.entityType === 'NOTE' ? (data.canEdit || false) : false;
   const hashedPassword = data.password ? await hashPassword(data.password) : null;
 
-  const share = await prisma.share.create({
-    data: {
-      entityType: data.entityType,
-      entityId: data.entityId,
-      password: hashedPassword,
-      expiresAt: data.expiresAt,
-      oneTime: data.oneTime || false,
-    },
-    select: {
-      id: true,
-      entityType: true,
-      entityId: true,
-      expiresAt: true,
-      oneTime: true,
-      createdAt: true,
-      updatedAt: true,
-    }
+  const shareSelect = {
+    id: true,
+    entityType: true,
+    entityId: true,
+    expiresAt: true,
+    oneTime: true,
+    scope: true,
+    password: true,
+    createdAt: true,
+    updatedAt: true,
+  } as const;
+
+  // Check for an existing share of the same scope for this entity
+  const existing = await prisma.share.findFirst({
+    where: { entityType: data.entityType, entityId: data.entityId, scope },
+    select: shareSelect,
   });
 
+  let share: typeof existing & { id: string };
+
+  if (existing) {
+    // Reuse existing share — update settings and add any new recipients
+    const updateData: Record<string, unknown> = { canEdit };
+    if (scope === 'PUBLIC') {
+      if (hashedPassword !== null) updateData.password = hashedPassword;
+      if (data.expiresAt !== undefined) updateData.expiresAt = data.expiresAt;
+      if (data.oneTime !== undefined) updateData.oneTime = data.oneTime;
+    }
+    share = await prisma.share.update({
+      where: { id: existing.id },
+      data: updateData,
+      select: shareSelect,
+    });
+
+    // Add new recipients without duplicating existing ones
+    if (scope === 'SPECIFIC' && data.recipientIds?.length) {
+      await prisma.shareRecipient.createMany({
+        data: data.recipientIds.map((userId) => ({ shareId: existing.id, userId })),
+        skipDuplicates: true,
+      });
+    }
+  } else {
+    share = await prisma.share.create({
+      data: {
+        entityType: data.entityType,
+        entityId: data.entityId,
+        password: hashedPassword,
+        expiresAt: data.expiresAt,
+        oneTime: data.oneTime || false,
+        scope,
+        canEdit,
+        sharedBy: user.id,
+        ...(scope === 'SPECIFIC' && data.recipientIds?.length
+          ? { recipients: { create: data.recipientIds.map((userId) => ({ userId })) } }
+          : {}),
+      },
+      select: shareSelect,
+    });
+  }
+
+  // Auto-create a decrypted snapshot so encrypted content is readable in share views
+  if (user.encryptionEnabled) {
+    try {
+      const { getSessionEncryptionKey, decryptNoteFields, decryptBoardFields } = await import('@/utils/encryption');
+      const encKey = await getSessionEncryptionKey(session.id);
+      if (encKey) {
+        let snapshot: string | null = null;
+        if (data.entityType === 'NOTE') {
+          const note = await prisma.note.findUnique({
+            where: { id: data.entityId },
+            include: { boards: { include: { user: { select: { name: true } } } } },
+          });
+          if (note) {
+            const decrypted = decryptNoteFields(note, encKey);
+            snapshot = JSON.stringify({
+              type: 'NOTE',
+              title: decrypted.title,
+              content: decrypted.content,
+              imageUrl: decrypted.imageUrl,
+              createdAt: note.createdAt.toISOString(),
+              updatedAt: note.updatedAt.toISOString(),
+              boards: note.boards ? { user: note.boards.user } : null,
+            });
+          }
+        } else if (data.entityType === 'BOARD') {
+          const board = await prisma.board.findUnique({
+            where: { id: data.entityId },
+            include: { user: { select: { name: true } }, notes: { include: { pictures: true } } },
+          });
+          if (board) {
+            const decryptedBoard = decryptBoardFields(board, encKey);
+            const decryptedNotes = board.notes.map((note) => {
+              const d = decryptNoteFields(note, encKey);
+              return { id: note.id, title: d.title, content: d.content, imageUrl: note.imageUrl, createdAt: note.createdAt.toISOString(), pictures: note.pictures };
+            });
+            snapshot = JSON.stringify({
+              type: 'BOARD',
+              title: decryptedBoard.title,
+              description: decryptedBoard.description,
+              imageUrl: board.imageUrl,
+              createdAt: board.createdAt.toISOString(),
+              updatedAt: board.updatedAt.toISOString(),
+              user: board.user,
+              notes: decryptedNotes,
+            });
+          }
+        }
+        if (snapshot) {
+          await prisma.share.update({ where: { id: share.id }, data: { snapshot, snapshotUpdatedAt: new Date() } });
+        }
+      }
+    } catch (e) {
+      console.error('Failed to auto-create share snapshot:', e);
+    }
+  }
+
   revalidatePath('/shared');
+  revalidatePath('/community');
   return { ...share, hasPassword: !!hashedPassword };
 }
 
@@ -92,6 +195,15 @@ export async function deleteShare(id: string) {
   revalidatePath('/shared');
 }
 
+export async function leaveShare(shareId: string): Promise<void> {
+  const { user } = await getCurrentSession();
+  if (!user) throw new Error('Unauthorized');
+
+  await prisma.shareRecipient.deleteMany({ where: { shareId, userId: user.id } });
+
+  revalidatePath('/community');
+}
+
 export async function getSharesWithMetrics(): Promise<SharedContent[]> {
   const { user } = await getCurrentSession();
   if (!user) return [];
@@ -120,26 +232,36 @@ export async function getSharesWithMetrics(): Promise<SharedContent[]> {
       id: true,
       entityType: true,
       entityId: true,
-      password: true, // We will map this to hasPassword
+      password: true,
       expiresAt: true,
       oneTime: true,
       viewCount: true,
+      scope: true,
+      canEdit: true,
+      snapshotUpdatedAt: true,
       createdAt: true,
       updatedAt: true,
       views: true,
+      recipients: { select: { user: { select: { id: true, name: true, email: true } } } },
     },
     orderBy: { createdAt: 'desc' }
   });
 
   // Fetch entity titles
+  const { getSessionEncryptionKey, decryptField } = await import('@/utils/encryption');
+  const { session } = await getCurrentSession();
+  const encKey = user.encryptionEnabled && session ? await getSessionEncryptionKey(session.id) : null;
+
   const enrichedShares = await Promise.all(shares.map(async (share) => {
     let title = 'Unknown';
     if (share.entityType === 'NOTE') {
        const note = await prisma.note.findUnique({ where: { id: share.entityId }, select: { title: true }});
-       title = note?.title || 'Note not found';
+       const raw = note?.title || 'Note not found';
+       title = encKey ? (() => { try { return decryptField(raw, encKey); } catch { return raw; } })() : raw;
     } else {
        const board = await prisma.board.findUnique({ where: { id: share.entityId }, select: { title: true }});
-       title = board?.title || 'Board not found';
+       const raw = board?.title || 'Board not found';
+       title = encKey ? (() => { try { return decryptField(raw, encKey); } catch { return raw; } })() : raw;
     }
 
     const now = new Date();
@@ -150,13 +272,13 @@ export async function getSharesWithMetrics(): Promise<SharedContent[]> {
     const monthlyViews = share.views.filter(v => v.createdAt >= oneMonthAgo).length;
     const totalViews = share.views.length;
 
-    // Map sensitive data out
-    const { password, ...safeShare } = share;
+    const { password, recipients, ...safeShare } = share;
 
     return {
       ...safeShare,
       hasPassword: !!password,
       title,
+      recipients: recipients.map(r => r.user),
       metrics: {
         weekly: weeklyViews,
         monthly: monthlyViews,
@@ -234,4 +356,241 @@ export async function updateSharePassword(id: string, newPassword: string | null
   });
 
   revalidatePath('/shared');
+}
+
+export interface CommunityShare {
+  id: string;
+  entityType: string;
+  entityId: number;
+  title: string;
+  imageUrl: string | null;
+  creatorName: string | null;
+  createdAt: Date;
+  canEdit: boolean;
+}
+
+export async function getCommunityShares(): Promise<CommunityShare[]> {
+  const { user } = await getCurrentSession();
+  if (!user) return [];
+
+  const shares = await prisma.share.findMany({
+    where: { scope: 'ALL' },
+    select: {
+      id: true,
+      entityType: true,
+      entityId: true,
+      createdAt: true,
+      snapshot: true,
+      creator: { select: { name: true } },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return Promise.all(
+    shares.map(async (share) => {
+      let title = 'Unknown';
+      let imageUrl: string | null = null;
+      if (share.snapshot) {
+        try {
+          const snap = JSON.parse(share.snapshot) as { title?: string; imageUrl?: string | null };
+          title = snap.title || 'Unknown';
+          imageUrl = snap.imageUrl ?? null;
+        } catch { /* fall through */ }
+      }
+      if (title === 'Unknown') {
+        if (share.entityType === 'NOTE') {
+          const note = await prisma.note.findUnique({ where: { id: share.entityId }, select: { title: true, imageUrl: true } });
+          title = note?.title || 'Note not found';
+          imageUrl = note?.imageUrl ?? null;
+        } else {
+          const board = await prisma.board.findUnique({ where: { id: share.entityId }, select: { title: true, imageUrl: true } });
+          title = board?.title || 'Board not found';
+          imageUrl = board?.imageUrl ?? null;
+        }
+      }
+      return {
+        id: share.id,
+        entityType: share.entityType,
+        entityId: share.entityId,
+        title,
+        imageUrl,
+        creatorName: share.creator?.name ?? null,
+        createdAt: share.createdAt,
+        canEdit: false,
+      };
+    })
+  );
+}
+
+export async function getSharedWithMe(): Promise<CommunityShare[]> {
+  const { user } = await getCurrentSession();
+  if (!user) return [];
+
+  const recipients = await prisma.shareRecipient.findMany({
+    where: { userId: user.id },
+    select: {
+      share: {
+        select: {
+          id: true,
+          entityType: true,
+          entityId: true,
+          createdAt: true,
+          snapshot: true,
+          canEdit: true,
+          creator: { select: { name: true } },
+        },
+      },
+    },
+    orderBy: { share: { createdAt: 'desc' } },
+  });
+
+  return Promise.all(
+    recipients.map(async ({ share }) => {
+      let title = 'Unknown';
+      let imageUrl: string | null = null;
+      if (share.snapshot) {
+        try {
+          const snap = JSON.parse(share.snapshot) as { title?: string; imageUrl?: string | null };
+          title = snap.title || 'Unknown';
+          imageUrl = snap.imageUrl ?? null;
+        } catch { /* fall through */ }
+      }
+      if (title === 'Unknown') {
+        if (share.entityType === 'NOTE') {
+          const note = await prisma.note.findUnique({ where: { id: share.entityId }, select: { title: true, imageUrl: true } });
+          title = note?.title || 'Note not found';
+          imageUrl = note?.imageUrl ?? null;
+        } else {
+          const board = await prisma.board.findUnique({ where: { id: share.entityId }, select: { title: true, imageUrl: true } });
+          title = board?.title || 'Board not found';
+          imageUrl = board?.imageUrl ?? null;
+        }
+      }
+      return {
+        id: share.id,
+        entityType: share.entityType,
+        entityId: share.entityId,
+        title,
+        imageUrl,
+        creatorName: share.creator?.name ?? null,
+        createdAt: share.createdAt,
+        canEdit: share.canEdit,
+      };
+    })
+  );
+}
+
+export async function getEntityPublicShare(
+  entityType: 'NOTE' | 'BOARD',
+  entityId: number,
+): Promise<{ id: string; snapshotUpdatedAt: Date | null } | null> {
+  const { user } = await getCurrentSession();
+  if (!user) return null;
+
+  const share = await prisma.share.findFirst({
+    where: { entityType, entityId, scope: 'PUBLIC' },
+    select: { id: true, snapshotUpdatedAt: true },
+  });
+
+  return share ?? null;
+}
+
+export async function createOrUpdateSnapshot(shareId: string): Promise<void> {
+  const { session, user } = await getCurrentSession();
+  if (!user || !session) throw new Error('Unauthorized');
+
+  const share = await prisma.share.findUnique({ where: { id: shareId } });
+  if (!share) throw new Error('Share not found');
+
+  let isOwner = false;
+  if (share.entityType === 'NOTE') {
+    const note = await prisma.note.findFirst({
+      where: { id: share.entityId, boards: { userId: user.id } },
+    });
+    isOwner = !!note;
+  } else {
+    const board = await prisma.board.findFirst({
+      where: { id: share.entityId, userId: user.id },
+    });
+    isOwner = !!board;
+  }
+
+  if (!isOwner && user.role !== 'admin') throw new Error('Not allowed');
+
+  const { getSessionEncryptionKey, decryptNoteFields, decryptBoardFields } = await import('@/utils/encryption');
+  const encKey = await getSessionEncryptionKey(session.id);
+
+  let snapshot: string;
+
+  if (share.entityType === 'NOTE') {
+    const note = await prisma.note.findUnique({
+      where: { id: share.entityId },
+      include: { boards: { include: { user: { select: { name: true } } } } },
+    });
+    if (!note) throw new Error('Note not found');
+
+    const decrypted = encKey ? decryptNoteFields(note, encKey) : note;
+    snapshot = JSON.stringify({
+      type: 'NOTE',
+      title: decrypted.title,
+      content: decrypted.content,
+      imageUrl: decrypted.imageUrl,
+      createdAt: note.createdAt.toISOString(),
+      updatedAt: note.updatedAt.toISOString(),
+      boards: note.boards ? { user: note.boards.user } : null,
+    });
+  } else {
+    const board = await prisma.board.findUnique({
+      where: { id: share.entityId },
+      include: {
+        user: { select: { name: true } },
+        notes: { include: { pictures: true } },
+      },
+    });
+    if (!board) throw new Error('Board not found');
+
+    const decryptedBoard = encKey ? decryptBoardFields(board, encKey) : board;
+    const decryptedNotes = board.notes.map((note) => {
+      const d = encKey ? decryptNoteFields(note, encKey) : note;
+      return {
+        id: note.id,
+        title: d.title,
+        content: d.content,
+        imageUrl: note.imageUrl,
+        createdAt: note.createdAt.toISOString(),
+        pictures: note.pictures,
+      };
+    });
+
+    snapshot = JSON.stringify({
+      type: 'BOARD',
+      title: decryptedBoard.title,
+      description: decryptedBoard.description,
+      imageUrl: board.imageUrl,
+      createdAt: board.createdAt.toISOString(),
+      updatedAt: board.updatedAt.toISOString(),
+      user: board.user,
+      notes: decryptedNotes,
+    });
+  }
+
+  await prisma.share.update({
+    where: { id: shareId },
+    data: { snapshot, snapshotUpdatedAt: new Date() },
+  });
+
+  revalidatePath('/shared');
+}
+
+export async function getShareableUsers(): Promise<{ id: number; name: string | null; email: string }[]> {
+  const { user } = await getCurrentSession();
+  if (!user) return [];
+
+  const users = await prisma.user.findMany({
+    where: { id: { not: user.id } },
+    select: { id: true, name: true, email: true },
+    orderBy: { name: 'asc' },
+  });
+
+  return users;
 }

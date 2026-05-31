@@ -1,13 +1,14 @@
-import { getBoard } from '@/app/(authenticated)/boards/lib/actions';
+import { getBoard, getBoardForNoteRecipient } from '@/app/(authenticated)/boards/lib/actions';
 import { getCurrentSession } from '@/app/login/lib/actions';
 import PageBody from '@/components/PageBody';
 import PageContainer from '@/components/PageContainer';
 import PageFooter from '@/components/PageFooter';
 import PageHeader from '@/components/PageHeader';
-import { getNote } from '../lib/actions';
+import { getNote, getEditShareForNote, getNoteForRecipient } from '../lib/actions';
 import Editor from './components/Editor';
 import { getImageUrlOrFile } from '@/utils/image';
 import ShareDialog from '@/components/ShareDialog';
+import { getEntityPublicShare } from '@/app/(authenticated)/shared/lib/actions';
 import { getLocale, getTranslations } from 'next-intl/server';
 
 export default async function NotePage({
@@ -20,26 +21,41 @@ export default async function NotePage({
     return null;
   }
   const { id, noteId } = await params;
-  const board = await getBoard(parseInt(id));
-  const note = await getNote(parseInt(noteId));
+  let board = await getBoard(parseInt(id));
+  let note = await getNote(parseInt(noteId));
   const tNav = await getTranslations('Navigation');
   const tNotes = await getTranslations('NotesPage');
   const t = await getTranslations('NoteDetailPage');
   const locale = await getLocale();
 
+  // If user isn't the owner, check if they have a canEdit share for this note
+  let canEditViaShare = false;
+  if (!note) {
+    const editShare = await getEditShareForNote(parseInt(noteId));
+    if (editShare) {
+      note = await getNoteForRecipient(parseInt(noteId));
+      board = board ?? await getBoardForNoteRecipient(parseInt(noteId));
+      canEditViaShare = true;
+    }
+  }
+
   if (!board || !note) {
     return null;
   }
 
-  const breadcrumbs = [
-    { name: tNav('home'), href: '/' },
-    { name: tNav('boards'), href: '/boards' },
-    { name: board?.title ?? tNotes('fallback'), href: `/boards/${board.id}/notes` },
-    {
-      name: note?.title ?? '',
-      href: `/boards/${board.id}/notes/${note.id}`,
-    },
-  ];
+  const noteShare = await getEntityPublicShare('NOTE', note.id);
+
+  const breadcrumbs = canEditViaShare
+    ? [
+        { name: tNav('community'), href: '/community' },
+        { name: note?.title ?? '', href: `/boards/${board.id}/notes/${note.id}` },
+      ]
+    : [
+        { name: tNav('home'), href: '/' },
+        { name: tNav('boards'), href: '/boards' },
+        { name: board?.title ?? tNotes('fallback'), href: `/boards/${board.id}/notes` },
+        { name: note?.title ?? '', href: `/boards/${board.id}/notes/${note.id}` },
+      ];
 
   return (
     <PageContainer>
@@ -64,13 +80,16 @@ export default async function NotePage({
         }
         breadcrumbs={breadcrumbs}
       >
-        <ShareDialog entityType="NOTE" entityId={note.id} />
+        <div className="flex items-center gap-1.5 sm:gap-3">
+          <ShareDialog entityType="NOTE" entityId={note.id} />
+        </div>
       </PageHeader>
       <PageBody>
         {note && (
           <Editor
             note={note}
-            isOwner={board.userId === user.id}
+            isOwner={board.userId === user.id || canEditViaShare}
+            canDeleteHistory={board.userId === user.id}
             currentUserId={user.id}
           />
         )}

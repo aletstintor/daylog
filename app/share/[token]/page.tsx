@@ -1,11 +1,12 @@
 import { prisma } from '@/prisma/client';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import PasswordEntry from './components/PasswordEntry';
 import SharedNoteView from './components/SharedNoteView';
 import SharedBoardView from './components/SharedBoardView';
 import { ClockIcon } from '@heroicons/react/24/outline';
 import { cookies } from 'next/headers';
 import { isEncrypted } from '@/utils/encryption';
+import { getCurrentSession } from '@/app/login/lib/actions';
 
 const ENCRYPTED_PLACEHOLDER = '[Encrypted content — not available in shared view]';
 
@@ -64,44 +65,51 @@ export default async function PublicSharePage({
     );
   }
 
+  // If this is a canEdit share, redirect authenticated recipients to the note editor
+  if (share.canEdit && share.entityType === 'NOTE' && share.scope === 'SPECIFIC') {
+    const { user } = await getCurrentSession();
+    if (user) {
+      const isRecipient = await prisma.shareRecipient.findFirst({
+        where: { shareId: share.id, userId: user.id },
+      });
+      if (isRecipient) {
+        const note = await prisma.note.findUnique({ where: { id: share.entityId }, select: { boardsId: true } });
+        if (note) redirect(`/boards/${note.boardsId}/notes/${share.entityId}?ref=community`);
+      }
+    }
+  }
+
   // Password check
   if (share.password && !isAuthorized) {
     return <PasswordEntry token={token} />;
   }
 
-  // Fetch linked entity with sanitized user data
+  // Use snapshot if available; fall back to live data (with encrypted field masking)
   let entity: unknown = null;
-  const userSelect = { select: { name: true } };
 
-  if (share.entityType === 'NOTE') {
-    entity = await prisma.note.findUnique({
-      where: { id: share.entityId },
-      include: {
-        boards: {
-          include: {
-            user: userSelect
-          }
-        }
-      }
-    });
+  if (share.snapshot) {
+    entity = JSON.parse(share.snapshot);
   } else {
-    entity = await prisma.board.findUnique({
-      where: { id: share.entityId },
-      include: {
-        user: userSelect,
-        notes: {
-          include: {
-            pictures: true
-          }
-        }
-      }
-    });
+    const userSelect = { select: { name: true } };
+
+    if (share.entityType === 'NOTE') {
+      entity = await prisma.note.findUnique({
+        where: { id: share.entityId },
+        include: { boards: { include: { user: userSelect } } },
+      });
+    } else {
+      entity = await prisma.board.findUnique({
+        where: { id: share.entityId },
+        include: {
+          user: userSelect,
+          notes: { include: { pictures: true } },
+        },
+      });
+    }
+
+    if (!entity) return notFound();
+    entity = maskEncryptedFields(entity as Record<string, unknown>);
   }
-
-  if (!entity) return notFound();
-
-  // Replace encrypted field values with a placeholder (no session key available in share view)
-  entity = maskEncryptedFields(entity as Record<string, unknown>);
 
   // Handle one-time view with atomic check
   if (share.oneTime) {
