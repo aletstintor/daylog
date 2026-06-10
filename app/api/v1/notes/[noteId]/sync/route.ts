@@ -1,7 +1,7 @@
 import { getCurrentSession } from '@/app/login/lib/actions';
 import { prisma } from '@/prisma/client';
 import { NextRequest } from 'next/server';
-import { getOrCreateRoom, broadcastToRoom } from '@/lib/noteCollaboration';
+import { getOrCreateRoom, broadcastToRoom, loadNoteRoomContent } from '@/lib/noteCollaboration';
 import { computeDiff, applyPatch } from '@/utils/diff';
 
 const MAX_PATCH_SIZE = 64 * 1024; // 64 KB
@@ -59,10 +59,9 @@ export async function POST(
       return Response.json({ error: 'Invalid line' }, { status: 400 });
     }
 
-    const room = await getOrCreateRoom(noteId, async () => {
-      const note = await prisma.note.findUnique({ where: { id: noteId } });
-      return note?.content ?? '';
-    });
+    const room = await getOrCreateRoom(noteId, () =>
+      loadNoteRoomContent(noteId, req.cookies.get('session')?.value),
+    );
 
     const userName = user.name ?? user.email ?? 'Unknown';
     room.presence.set(user.id, {
@@ -100,10 +99,9 @@ export async function POST(
       return Response.json({ error: 'Patch too large' }, { status: 413 });
     }
 
-    const room = await getOrCreateRoom(noteId, async () => {
-      const note = await prisma.note.findUnique({ where: { id: noteId } });
-      return note?.content ?? '';
-    });
+    const room = await getOrCreateRoom(noteId, () =>
+      loadNoteRoomContent(noteId, req.cookies.get('session')?.value),
+    );
 
     let newContent: string | null = null;
 

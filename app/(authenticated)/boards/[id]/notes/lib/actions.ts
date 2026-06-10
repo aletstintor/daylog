@@ -88,7 +88,12 @@ export async function updateNote(note: Note): Promise<Note | null> {
       const previousContentToStore = key ? encryptField(currentContentPlain, key) : currentContentPlain;
 
       await prisma.noteChange.create({
-        data: { noteId: note.id, userId: user.id, diffPatch, previousContent: previousContentToStore },
+        data: {
+          noteId: note.id,
+          userId: user.id,
+          diffPatch: key ? encryptField(diffPatch, key) : diffPatch,
+          previousContent: previousContentToStore,
+        },
       });
     }
   }
@@ -433,7 +438,30 @@ export async function getNoteChanges(
       orderBy: { createdAt: 'desc' },
     });
 
-    return changes;
+    const key = user.encryptionEnabled ? await getCurrentSessionKey() : null;
+    if (!key) return changes;
+
+    // History entries created by share recipients are stored in plaintext
+    // (decryptField passes them through); entries we cannot decrypt are
+    // returned untouched.
+    const tryDecrypt = (value: string): string => {
+      try {
+        return decryptField(value, key);
+      } catch {
+        return value;
+      }
+    };
+
+    return changes.map((change) => ({
+      ...change,
+      diffPatch: tryDecrypt(change.diffPatch),
+      previousContent:
+        change.previousContent != null ? tryDecrypt(change.previousContent) : change.previousContent,
+      comments: change.comments.map((comment) => ({
+        ...comment,
+        content: tryDecrypt(comment.content),
+      })),
+    }));
   } catch (e) {
     console.error(e);
     return [];
@@ -523,7 +551,15 @@ export async function restoreToVersion(
       return { success: false, error: 'Change not found' };
     }
 
-    const key = user.encryptionEnabled ? await getCurrentSessionKey() : null;
+    // Only the owner's key matches the stored ciphertext; a share recipient
+    // with their own encryption enabled must not use their key here.
+    let key: Buffer | null = null;
+    if (user.encryptionEnabled) {
+      const ownerBoard = await prisma.board.findFirst({
+        where: { id: note.boardsId ?? undefined, userId: user.id },
+      });
+      key = ownerBoard ? await getCurrentSessionKey() : null;
+    }
 
     // Decrypt stored content for comparison and diff computation
     const targetContentPlain = key && change.previousContent
@@ -549,7 +585,7 @@ export async function restoreToVersion(
       data: {
         noteId: noteId,
         userId: user.id,
-        diffPatch,
+        diffPatch: key ? encryptField(diffPatch, key) : diffPatch,
         previousContent: previousContentToStore,
       },
     });
@@ -595,11 +631,21 @@ export async function addChangeComment(
     const noteAccess = await getNoteWithAccess(change.noteId, user.id);
     if (!noteAccess) return null;
 
+    // Encrypt only when commenting on an owned note; recipients store
+    // plaintext to avoid mixing keys on someone else's data.
+    let key: Buffer | null = null;
+    if (user.encryptionEnabled) {
+      const ownerNote = await prisma.note.findFirst({
+        where: { id: change.noteId, boards: { userId: user.id } },
+      });
+      key = ownerNote ? await getCurrentSessionKey() : null;
+    }
+
     const comment = await prisma.changeComment.create({
       data: {
         changeId,
         userId: user.id,
-        content,
+        content: key ? encryptField(content, key) : content,
       },
       include: {
         user: true,
@@ -607,7 +653,7 @@ export async function addChangeComment(
     });
 
     revalidatePath(`/boards/${change.note.boardsId}/notes/${change.noteId}`);
-    return comment;
+    return { ...comment, content };
   } catch (e) {
     console.error(e);
     return null;

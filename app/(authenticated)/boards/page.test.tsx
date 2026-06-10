@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   getBoardsCount: vi.fn(),
   getBoards: vi.fn(),
   getSettings: vi.fn(),
+  setUserBoardsSort: vi.fn(),
 }));
 
 vi.mock('@/app/login/lib/actions', () => ({
@@ -19,6 +20,7 @@ vi.mock('@/app/login/lib/actions', () => ({
 vi.mock('./lib/actions', () => ({
   getBoardsCount: mocks.getBoardsCount,
   getBoards: mocks.getBoards,
+  setUserBoardsSort: mocks.setUserBoardsSort,
 }));
 
 vi.mock('@/app/(authenticated)/admin/lib/actions', () => ({

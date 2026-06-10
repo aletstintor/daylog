@@ -8,6 +8,7 @@ import {
   broadcastToRoom,
   formatSSE,
   getRoomPresence,
+  loadNoteRoomContent,
 } from '@/lib/noteCollaboration';
 import { randomUUID } from 'crypto';
 
@@ -49,10 +50,10 @@ export async function GET(
 
   const userName = user.name ?? user.email ?? 'Unknown';
 
-  const room = await getOrCreateRoom(noteId, async () => {
-    const note = await prisma.note.findUnique({ where: { id: noteId } });
-    return note?.content ?? '';
-  });
+  const sessionToken = req.cookies.get('session')?.value;
+  const room = await getOrCreateRoom(noteId, () =>
+    loadNoteRoomContent(noteId, sessionToken),
+  );
 
   const connectionId = randomUUID();
   let pingInterval: ReturnType<typeof setInterval> | null = null;

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Run the start:docker command
-npx prisma migrate deploy
+./node_modules/.bin/prisma migrate deploy
 
 # Start the server
 node server.js

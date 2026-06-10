@@ -176,8 +176,21 @@ export async function reEncryptAll(
   const noteIds = notes.map((n) => n.id);
   const noteChanges = await prisma.noteChange.findMany({
     where: { noteId: { in: noteIds } },
-    select: { id: true, previousContent: true },
+    select: { id: true, diffPatch: true, previousContent: true },
   });
+  const changeComments = await prisma.changeComment.findMany({
+    where: { change: { noteId: { in: noteIds } } },
+    select: { id: true, content: true },
+  });
+
+  const reEncrypt = (value: string): string => {
+    try {
+      return encryptField(decryptField(value, oldKey), newKey);
+    } catch {
+      // leave as-is if decryption fails
+      return value;
+    }
+  };
 
   await prisma.$transaction([
     ...boards.map((board) => {
@@ -194,19 +207,21 @@ export async function reEncryptAll(
         data: { title: reEncrypted.title, content: reEncrypted.content },
       });
     }),
-    ...noteChanges
-      .filter((nc) => nc.previousContent != null)
-      .map((nc) => {
-        let newPrev: string | null = nc.previousContent;
-        try {
-          newPrev = encryptField(decryptField(nc.previousContent!, oldKey), newKey);
-        } catch {
-          // leave as-is if decryption fails
-        }
-        return prisma.noteChange.update({
-          where: { id: nc.id },
-          data: { previousContent: newPrev },
-        });
+    ...noteChanges.map((nc) =>
+      prisma.noteChange.update({
+        where: { id: nc.id },
+        data: {
+          diffPatch: reEncrypt(nc.diffPatch),
+          previousContent:
+            nc.previousContent != null ? reEncrypt(nc.previousContent) : nc.previousContent,
+        },
       }),
+    ),
+    ...changeComments.map((cc) =>
+      prisma.changeComment.update({
+        where: { id: cc.id },
+        data: { content: reEncrypt(cc.content) },
+      }),
+    ),
   ]);
 }

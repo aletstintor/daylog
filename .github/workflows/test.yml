@@ -20,10 +20,10 @@ jobs:
           node-version: '18' # or your preferred Node.js version
 
       - name: Install dependencies
-        run: npm install --ignore-scripts
-        
+        run: npm ci --ignore-scripts
+
       - name: Generate Prisma Client
-        run: npx prisma generate
+        run: ./node_modules/.bin/prisma generate
         
       - name: Run tests
         run: npm test

@@ -17,6 +17,8 @@ import {
   wrapKeyWithMaster,
   reEncryptAll,
   isEncrypted,
+  encryptField,
+  decryptField,
 } from '@/utils/encryption';
 import { encodeHex } from '@/utils/crypto';
 import { generateTOTP, validateTOTP } from '@/utils/totp';
@@ -637,6 +639,18 @@ export async function enableEncryption(
       where: { boards: { userId: user.id } },
       select: { id: true, title: true, content: true },
     });
+    const noteIds = notes.map((n) => n.id);
+    const noteChanges = await prisma.noteChange.findMany({
+      where: { noteId: { in: noteIds } },
+      select: { id: true, diffPatch: true, previousContent: true },
+    });
+    const changeComments = await prisma.changeComment.findMany({
+      where: { change: { noteId: { in: noteIds } } },
+      select: { id: true, content: true },
+    });
+
+    // Skip values that are somehow already encrypted (idempotency safety)
+    const encrypt = (value: string) => (isEncrypted(value) ? value : encryptField(value, key));
 
     await prisma.$transaction([
       prisma.user.update({
@@ -657,6 +671,22 @@ export async function enableEncryption(
           data: { title: enc.title, content: enc.content },
         });
       }),
+      ...noteChanges.map((nc) =>
+        prisma.noteChange.update({
+          where: { id: nc.id },
+          data: {
+            diffPatch: encrypt(nc.diffPatch),
+            previousContent:
+              nc.previousContent != null ? encrypt(nc.previousContent) : nc.previousContent,
+          },
+        }),
+      ),
+      ...changeComments.map((cc) =>
+        prisma.changeComment.update({
+          where: { id: cc.id },
+          data: { content: encrypt(cc.content) },
+        }),
+      ),
     ]);
 
     // Store key in current session and clear all other sessions' keys
@@ -712,6 +742,25 @@ export async function disableEncryption(
       where: { boards: { userId: user.id } },
       select: { id: true, title: true, content: true },
     });
+    const noteIds = notes.map((n) => n.id);
+    const noteChanges = await prisma.noteChange.findMany({
+      where: { noteId: { in: noteIds } },
+      select: { id: true, diffPatch: true, previousContent: true },
+    });
+    const changeComments = await prisma.changeComment.findMany({
+      where: { change: { noteId: { in: noteIds } } },
+      select: { id: true, content: true },
+    });
+
+    // Plaintext values (e.g. recipient edits) pass through; undecryptable
+    // values are kept as-is rather than destroyed.
+    const decrypt = (value: string) => {
+      try {
+        return decryptField(value, key);
+      } catch {
+        return value;
+      }
+    };
 
     await prisma.$transaction([
       prisma.user.update({
@@ -733,6 +782,22 @@ export async function disableEncryption(
           data: { title: dec.title, content: dec.content },
         });
       }),
+      ...noteChanges.map((nc) =>
+        prisma.noteChange.update({
+          where: { id: nc.id },
+          data: {
+            diffPatch: decrypt(nc.diffPatch),
+            previousContent:
+              nc.previousContent != null ? decrypt(nc.previousContent) : nc.previousContent,
+          },
+        }),
+      ),
+      ...changeComments.map((cc) =>
+        prisma.changeComment.update({
+          where: { id: cc.id },
+          data: { content: decrypt(cc.content) },
+        }),
+      ),
     ]);
 
     revalidatePath(`/profile/${user.id}`);
@@ -817,6 +882,24 @@ export async function wipeEncryptedData(
       where: { boards: { userId: user.id } },
       select: { id: true, title: true, content: true },
     });
+    const noteIds = notes.map((n) => n.id);
+    const noteChanges = await prisma.noteChange.findMany({
+      where: { noteId: { in: noteIds } },
+      select: { id: true, diffPatch: true, previousContent: true },
+    });
+    const changeComments = await prisma.changeComment.findMany({
+      where: { change: { noteId: { in: noteIds } } },
+      select: { id: true, content: true },
+    });
+
+    // Encrypted history entries and comments are unrecoverable — delete them.
+    // Deleting a change cascades to its comments.
+    const wipedChangeIds = noteChanges
+      .filter((nc) => isEncrypted(nc.diffPatch) || isEncrypted(nc.previousContent))
+      .map((nc) => nc.id);
+    const wipedCommentIds = changeComments
+      .filter((cc) => isEncrypted(cc.content))
+      .map((cc) => cc.id);
 
     await prisma.$transaction([
       prisma.user.update({
@@ -824,6 +907,8 @@ export async function wipeEncryptedData(
         data: { encryptionEnabled: false, encryptedDataLocked: false },
       }),
       prisma.session.updateMany({ where: { userId: user.id }, data: { encryptedKey: null } }),
+      prisma.changeComment.deleteMany({ where: { id: { in: wipedCommentIds } } }),
+      prisma.noteChange.deleteMany({ where: { id: { in: wipedChangeIds } } }),
       ...boards.map((b) => prisma.board.update({
         where: { id: b.id },
         data: {

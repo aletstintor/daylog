@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { useActionState, useState } from 'react';
 import { signupInit } from '../lib/actions';
 import Link from 'next/link';
+import FormField from '@/components/FormField';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,6 +21,7 @@ export default function InitRegisterForm() {
   const t = useTranslations('InitRegisterPage');
   const [state, action, pending] = useActionState(signupInit, undefined);
   const [isShowPassword, setIsShowPassword] = useState(false);
+  const passwordErrors = state?.errors?.password;
 
   return (
     <div
@@ -70,42 +72,21 @@ export default function InitRegisterForm() {
           </CardHeader>
           <CardContent>
             <form action={action} autoComplete="off" className="space-y-2">
-              <div className="space-y-1">
-                <Label htmlFor="name">{t('nameLabel')}</Label>
-                <Input
-                  id="name"
-                  name="name"
-                  defaultValue={state?.data?.name?.toString()}
-                  placeholder={t('namePlaceholder')}
-                  className={state?.errors?.name ? 'border-destructive' : ''}
-                />
-                {state?.errors?.name && (
-                  <p className="text-[12px] text-destructive">
-                    {state?.errors?.name}
-                  </p>
-                )}
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="email">{t('emailLabel')}</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  defaultValue={state?.data?.email?.toString()}
-                  placeholder={t('emailPlaceholder')}
-                  className={state?.errors?.email ? 'border-destructive' : ''}
-                />
-                {state?.errors?.email && (
-                  <div className="space-y-0.5">
-                    {(Array.isArray(state?.errors?.email)
-                      ? state?.errors?.email
-                      : [state?.errors?.email]
-                    ).map((err, i) => (
-                      <p key={i} className="text-[12px] text-destructive">{err}</p>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <FormField
+                label={t('nameLabel')}
+                name="name"
+                placeholder={t('namePlaceholder')}
+                defaultValue={state?.data?.name?.toString()}
+                errors={state?.errors?.name}
+              />
+              <FormField
+                label={t('emailLabel')}
+                name="email"
+                type="email"
+                placeholder={t('emailPlaceholder')}
+                defaultValue={state?.data?.email?.toString()}
+                errors={state?.errors?.email}
+              />
               <div className="space-y-1">
                 <Label htmlFor="password">{t('passwordLabel')}</Label>
                 <div className="relative">
@@ -117,9 +98,7 @@ export default function InitRegisterForm() {
                     placeholder={t('passwordPlaceholder')}
                     autoComplete="off"
                     className={
-                      state?.errors?.password
-                        ? 'border-destructive pr-10'
-                        : 'pr-10'
+                      passwordErrors ? 'border-destructive pr-10' : 'pr-10'
                     }
                   />
                   <button
@@ -134,12 +113,9 @@ export default function InitRegisterForm() {
                     )}
                   </button>
                 </div>
-                {state?.errors?.password && (
+                {passwordErrors && (
                   <div className="space-y-0.5">
-                    {(Array.isArray(state?.errors?.password)
-                      ? state?.errors?.password
-                      : [state?.errors?.password]
-                    ).map((err, i) => (
+                    {passwordErrors.map((err, i) => (
                       <p key={i} className="text-[12px] text-destructive">{err}</p>
                     ))}
                   </div>

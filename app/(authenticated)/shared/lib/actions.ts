@@ -8,6 +8,76 @@ import { createHash } from 'crypto';
 import { headers } from 'next/headers';
 import { SharedContent } from './types';
 
+// Simple ownership check: can the user see the entity linked to this share?
+async function isShareOwner(
+  share: { entityType: string; entityId: number },
+  user: { id: number },
+): Promise<boolean> {
+  if (share.entityType === 'NOTE') {
+    const note = await prisma.note.findFirst({
+      where: { id: share.entityId, boards: { userId: user.id } },
+    });
+    return !!note;
+  }
+  const board = await prisma.board.findFirst({
+    where: { id: share.entityId, userId: user.id },
+  });
+  return !!board;
+}
+
+// Resolve title/image from the share snapshot, falling back to the live entity.
+async function resolveShareMetadata(share: {
+  entityType: string;
+  entityId: number;
+  snapshot: string | null;
+}): Promise<{ title: string; imageUrl: string | null }> {
+  let title = 'Unknown';
+  let imageUrl: string | null = null;
+  if (share.snapshot) {
+    try {
+      const snap = JSON.parse(share.snapshot) as { title?: string; imageUrl?: string | null };
+      title = snap.title || 'Unknown';
+      imageUrl = snap.imageUrl ?? null;
+    } catch { /* fall through */ }
+  }
+  if (title === 'Unknown') {
+    if (share.entityType === 'NOTE') {
+      const note = await prisma.note.findUnique({ where: { id: share.entityId }, select: { title: true, imageUrl: true } });
+      title = note?.title || 'Note not found';
+      imageUrl = note?.imageUrl ?? null;
+    } else {
+      const board = await prisma.board.findUnique({ where: { id: share.entityId }, select: { title: true, imageUrl: true } });
+      title = board?.title || 'Board not found';
+      imageUrl = board?.imageUrl ?? null;
+    }
+  }
+  return { title, imageUrl };
+}
+
+async function toCommunityShare(
+  share: {
+    id: string;
+    entityType: string;
+    entityId: number;
+    createdAt: Date;
+    snapshot: string | null;
+    creator: { name: string | null } | null;
+  },
+  canEdit: boolean,
+): Promise<CommunityShare> {
+  const { title, imageUrl } = await resolveShareMetadata(share);
+  return {
+    id: share.id,
+    entityType: share.entityType,
+    entityId: share.entityId,
+    title,
+    imageUrl,
+    creatorName: share.creator?.name ?? null,
+    createdAt: share.createdAt,
+    canEdit,
+  };
+}
+
 export async function createShare(data: {
   entityType: string;
   entityId: number;
@@ -170,21 +240,7 @@ export async function deleteShare(id: string) {
 
   if (!share) return;
 
-  // Simple ownership check: can the user see the entity linked to this share?
-  let isOwner = false;
-  if (share.entityType === 'NOTE') {
-    const note = await prisma.note.findFirst({
-      where: { id: share.entityId, boards: { userId: user.id } },
-    });
-    isOwner = !!note;
-  } else {
-    const board = await prisma.board.findFirst({
-      where: { id: share.entityId, userId: user.id },
-    });
-    isOwner = !!board;
-  }
-
-  if (!isOwner && user.role !== 'admin') {
+  if (!(await isShareOwner(share, user)) && user.role !== 'admin') {
     throw new Error('Not allowed to delete this share');
   }
 
@@ -331,20 +387,7 @@ export async function updateSharePassword(id: string, newPassword: string | null
 
   if (!share) throw new Error('Share not found');
 
-  let isOwner = false;
-  if (share.entityType === 'NOTE') {
-    const note = await prisma.note.findFirst({
-      where: { id: share.entityId, boards: { userId: user.id } },
-    });
-    isOwner = !!note;
-  } else {
-    const board = await prisma.board.findFirst({
-      where: { id: share.entityId, userId: user.id },
-    });
-    isOwner = !!board;
-  }
-
-  if (!isOwner && user.role !== 'admin') {
+  if (!(await isShareOwner(share, user)) && user.role !== 'admin') {
     throw new Error('Not allowed to update this share');
   }
 
@@ -386,40 +429,7 @@ export async function getCommunityShares(): Promise<CommunityShare[]> {
     orderBy: { createdAt: 'desc' },
   });
 
-  return Promise.all(
-    shares.map(async (share) => {
-      let title = 'Unknown';
-      let imageUrl: string | null = null;
-      if (share.snapshot) {
-        try {
-          const snap = JSON.parse(share.snapshot) as { title?: string; imageUrl?: string | null };
-          title = snap.title || 'Unknown';
-          imageUrl = snap.imageUrl ?? null;
-        } catch { /* fall through */ }
-      }
-      if (title === 'Unknown') {
-        if (share.entityType === 'NOTE') {
-          const note = await prisma.note.findUnique({ where: { id: share.entityId }, select: { title: true, imageUrl: true } });
-          title = note?.title || 'Note not found';
-          imageUrl = note?.imageUrl ?? null;
-        } else {
-          const board = await prisma.board.findUnique({ where: { id: share.entityId }, select: { title: true, imageUrl: true } });
-          title = board?.title || 'Board not found';
-          imageUrl = board?.imageUrl ?? null;
-        }
-      }
-      return {
-        id: share.id,
-        entityType: share.entityType,
-        entityId: share.entityId,
-        title,
-        imageUrl,
-        creatorName: share.creator?.name ?? null,
-        createdAt: share.createdAt,
-        canEdit: false,
-      };
-    })
-  );
+  return Promise.all(shares.map((share) => toCommunityShare(share, false)));
 }
 
 export async function getSharedWithMe(): Promise<CommunityShare[]> {
@@ -445,38 +455,7 @@ export async function getSharedWithMe(): Promise<CommunityShare[]> {
   });
 
   return Promise.all(
-    recipients.map(async ({ share }) => {
-      let title = 'Unknown';
-      let imageUrl: string | null = null;
-      if (share.snapshot) {
-        try {
-          const snap = JSON.parse(share.snapshot) as { title?: string; imageUrl?: string | null };
-          title = snap.title || 'Unknown';
-          imageUrl = snap.imageUrl ?? null;
-        } catch { /* fall through */ }
-      }
-      if (title === 'Unknown') {
-        if (share.entityType === 'NOTE') {
-          const note = await prisma.note.findUnique({ where: { id: share.entityId }, select: { title: true, imageUrl: true } });
-          title = note?.title || 'Note not found';
-          imageUrl = note?.imageUrl ?? null;
-        } else {
-          const board = await prisma.board.findUnique({ where: { id: share.entityId }, select: { title: true, imageUrl: true } });
-          title = board?.title || 'Board not found';
-          imageUrl = board?.imageUrl ?? null;
-        }
-      }
-      return {
-        id: share.id,
-        entityType: share.entityType,
-        entityId: share.entityId,
-        title,
-        imageUrl,
-        creatorName: share.creator?.name ?? null,
-        createdAt: share.createdAt,
-        canEdit: share.canEdit,
-      };
-    })
+    recipients.map(({ share }) => toCommunityShare(share, share.canEdit)),
   );
 }
 
@@ -502,20 +481,8 @@ export async function createOrUpdateSnapshot(shareId: string): Promise<void> {
   const share = await prisma.share.findUnique({ where: { id: shareId } });
   if (!share) throw new Error('Share not found');
 
-  let isOwner = false;
-  if (share.entityType === 'NOTE') {
-    const note = await prisma.note.findFirst({
-      where: { id: share.entityId, boards: { userId: user.id } },
-    });
-    isOwner = !!note;
-  } else {
-    const board = await prisma.board.findFirst({
-      where: { id: share.entityId, userId: user.id },
-    });
-    isOwner = !!board;
-  }
-
-  if (!isOwner && user.role !== 'admin') throw new Error('Not allowed');
+  if (!(await isShareOwner(share, user)) && user.role !== 'admin')
+    throw new Error('Not allowed');
 
   const { getSessionEncryptionKey, decryptNoteFields, decryptBoardFields } = await import('@/utils/encryption');
   const encKey = await getSessionEncryptionKey(session.id);
