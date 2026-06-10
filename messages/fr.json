@@ -259,7 +259,8 @@
     "cancel": "Annuler",
     "goBack": "Retour",
     "enabledBadge": "Active",
-    "disabledBadge": "Desactive"
+    "disabledBadge": "Desactive",
+    "notConfiguredDescription": "Le chiffrement n'est pas disponible car ENCRYPTION_MASTER_KEY n'est pas configuree sur ce serveur. Contactez votre administrateur pour activer cette fonctionnalite."
   },
   "MFA": {
     "sectionLabel": "Parametres de securite",

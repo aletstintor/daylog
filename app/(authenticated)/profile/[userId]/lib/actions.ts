@@ -612,6 +612,10 @@ export async function enableEncryption(
     return { errors: result.error.flatten().fieldErrors, success: false };
   }
 
+  if (!process.env.ENCRYPTION_MASTER_KEY) {
+    return { message: 'Encryption is not configured on this server.', success: false };
+  }
+
   const { user } = await getCurrentSession();
   if (!user) return { message: 'Unauthorized', success: false };
 

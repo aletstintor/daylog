@@ -72,6 +72,8 @@ Vitest with jsdom. The test setup (`vitest.setup.ts`) mocks next-intl, localStor
 
 Tests live alongside source files or in `__tests__/` directories. Coverage excludes API routes, test files, icons, and Prisma-generated files (see `vitest.config.ts`).
 
+Never use `any` in tests or any other code. If a suitable type does not already exist, create one.
+
 ### Storage
 
 Image storage supports two backends configured via environment variables:

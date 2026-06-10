@@ -25,9 +25,9 @@ import { CheckCircleIcon } from '@heroicons/react/24/outline';
 import { Label } from '@/components/ui/label';
 import { useTranslations } from 'next-intl';
 
-type Props = { profile: User };
+type Props = { profile: User; masterKeyConfigured?: boolean };
 
-export default function EncryptData({ profile }: Props) {
+export default function EncryptData({ profile, masterKeyConfigured = false }: Props) {
   const t = useTranslations('EncryptData');
 
   if (profile.encryptedDataLocked) {
@@ -53,13 +53,22 @@ export default function EncryptData({ profile }: Props) {
         <p className="text-sm text-muted-foreground font-medium">{t('description')}</p>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center gap-4">
-          {profile.encryptionEnabled ? (
-            <DisableModal profile={profile} />
-          ) : (
-            <EnableModal profile={profile} />
-          )}
-        </div>
+        {!masterKeyConfigured ? (
+          <div className="p-4 bg-secondary/20 rounded-[12px] border border-border">
+            <p className="text-[13px] text-muted-foreground font-medium leading-relaxed flex gap-2">
+              <AlertOctagon className="h-4 w-4 flex-shrink-0 mt-0.5" />
+              {t('notConfiguredDescription')}
+            </p>
+          </div>
+        ) : (
+          <div className="flex items-center gap-4">
+            {profile.encryptionEnabled ? (
+              <DisableModal profile={profile} />
+            ) : (
+              <EnableModal profile={profile} />
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

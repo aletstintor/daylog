@@ -82,7 +82,9 @@ export default async function Profile({
         )}
         <ProfileInfo profile={profile} />
         <UpdatePass userId={user.id} profile={profile} />
-        {user.id === profile.id && <EncryptData profile={profile} />}
+        {user.id === profile.id && (
+          <EncryptData profile={profile} masterKeyConfigured={!!process.env.ENCRYPTION_MASTER_KEY} />
+        )}
         {settings?.mfa && <MultiFAAuth profile={profile}></MultiFAAuth>}
         {user.id === profile.id && <Backup />}
         <DangerZone profile={profile}></DangerZone>

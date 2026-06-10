@@ -259,7 +259,8 @@
     "cancel": "Abbrechen",
     "goBack": "Zurück",
     "enabledBadge": "Aktiviert",
-    "disabledBadge": "Deaktiviert"
+    "disabledBadge": "Deaktiviert",
+    "notConfiguredDescription": "Verschlüsselung ist nicht verfügbar, da ENCRYPTION_MASTER_KEY auf diesem Server nicht konfiguriert ist. Wende dich an deinen Administrator, um diese Funktion zu aktivieren."
   },
   "MFA": {
     "sectionLabel": "Sicherheitseinstellungen",

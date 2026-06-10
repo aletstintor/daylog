@@ -6,6 +6,7 @@ import {
   backupData,
   deleteAccount,
   deleteMFA,
+  enableEncryption,
   getProfile,
   sendOTP,
   updateMFA,
@@ -64,6 +65,16 @@ vi.mock('next/headers', () => ({
 
 vi.mock('@/utils/email', () => ({
   createAndVerifyTransporter: mocks.createAndVerifyTransporter,
+}));
+
+vi.mock('@/utils/encryption', () => ({
+  generateEncryptionSalt: vi.fn().mockReturnValue('mocksalt'),
+  deriveEncryptionKey: vi.fn().mockResolvedValue(Buffer.from('mockkey')),
+  wrapKeyWithMaster: vi.fn().mockReturnValue('wrappedkey'),
+  encryptBoardFields: vi.fn().mockImplementation((b) => b),
+  encryptNoteFields: vi.fn().mockImplementation((n) => n),
+  decryptBoardFields: vi.fn().mockImplementation((b) => b),
+  decryptNoteFields: vi.fn().mockImplementation((n) => n),
 }));
 
 describe('Profile Actions', () => {
@@ -648,6 +659,58 @@ describe('Profile Actions', () => {
         },
       });
       expect(mocks.createAndVerifyTransporter).toBeCalled();
+    });
+  });
+
+  describe('enableEncryption', () => {
+    const formData = new FormData();
+    formData.append('userId', '1');
+    formData.append('password', 'password');
+
+    it('returns error when ENCRYPTION_MASTER_KEY is not set', async () => {
+      const original = process.env.ENCRYPTION_MASTER_KEY;
+      delete process.env.ENCRYPTION_MASTER_KEY;
+
+      const result = await enableEncryption(undefined, formData);
+
+      expect(result).toEqual({
+        message: 'Encryption is not configured on this server.',
+        success: false,
+      });
+
+      process.env.ENCRYPTION_MASTER_KEY = original;
+    });
+
+    it('returns error when user is not authenticated', async () => {
+      process.env.ENCRYPTION_MASTER_KEY = 'a'.repeat(64);
+      mocks.getCurrentSession.mockResolvedValue({ user: null, session: null });
+
+      const result = await enableEncryption(undefined, formData);
+
+      expect(result).toEqual({ message: 'Unauthorized', success: false });
+
+      delete process.env.ENCRYPTION_MASTER_KEY;
+    });
+
+    it('returns error when password is incorrect', async () => {
+      process.env.ENCRYPTION_MASTER_KEY = 'a'.repeat(64);
+      mocks.getCurrentSession.mockResolvedValue({ user: { id: 1 }, session: null });
+      mocks.verifyPassword.mockResolvedValueOnce(false);
+      prismaMock.user.findUnique.mockResolvedValue({
+        id: 1,
+        password: 'hashed',
+        encryptionSalt: null,
+        encryptionEnabled: false,
+      } as User);
+
+      const result = await enableEncryption(undefined, formData);
+
+      expect(result).toEqual({
+        message: 'Current password is incorrect.',
+        success: false,
+      });
+
+      delete process.env.ENCRYPTION_MASTER_KEY;
     });
   });
 });

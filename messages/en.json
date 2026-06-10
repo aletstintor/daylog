@@ -259,7 +259,8 @@
     "cancel": "Cancel",
     "goBack": "Go Back",
     "enabledBadge": "Enabled",
-    "disabledBadge": "Disabled"
+    "disabledBadge": "Disabled",
+    "notConfiguredDescription": "Encryption is not available because ENCRYPTION_MASTER_KEY is not configured on this server. Contact your administrator to enable this feature."
   },
   "MFA": {
     "sectionLabel": "Security Settings",
