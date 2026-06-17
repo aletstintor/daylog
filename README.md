@@ -10,6 +10,24 @@
 
 If you want to use the stable version of daylog, you can find it [here](https://github.com/artifacts-oss/daylog/releases). Keep in mind that main branch is always in development and may not be stable.
 
+### Who is it for?
+
+**Privacy-conscious individuals**
+
+- Want a Notion/Obsidian-style notes app, but on their own server instead of a third-party cloud.
+- Opt-in AES-256 encryption + 2FA for sensitive data (personal journal, credentials, ideas).
+
+**Small teams / self-hosters**
+
+- Homelabbers and devs already running their stack (Postgres + Redis) who want full control.
+- Live multi-user editing for shared team notes without relying on a SaaS.
+
+**Concrete use cases**
+
+- Internal knowledge base for a startup that doesn't want to pay for Notion/Confluence.
+- Self-hosted project wiki and boards.
+- Personal journal or second brain with occasional public sharing via links (password + expiry).
+
 ### Features
 
 - **Self-Hosting:** daylog is a pure Next.js application, allowing you to host it on your own server or preferred hosting service.
