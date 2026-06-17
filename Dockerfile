@@ -26,6 +26,10 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
+# Dummy values: only needed so Next can import modules during static analysis.
+# Not used at runtime — real values come from the runner env.
+ENV REDIS_URL=redis://localhost:6379
+ENV DATABASE_URL=postgresql://user:password@localhost:5432/daylog
 
 # Generate Prisma Client
 RUN ./node_modules/.bin/prisma generate
