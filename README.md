@@ -34,27 +34,27 @@ If you want to use the stable version of daylog, you can find it [here](https://
 
 **Boards** — organize notes by context, project, or as folders.
 
-https://github.com/artifacts-oss/daylog/raw/main/resources/demos/boards.webm
+<video src="https://github.com/artifacts-oss/daylog/raw/main/resources/demos/boards.webm" controls></video>
 
 **Notes** — plain text or Markdown, with images and favorites.
 
-https://github.com/artifacts-oss/daylog/raw/main/resources/demos/notes.webm
+<video src="https://github.com/artifacts-oss/daylog/raw/main/resources/demos/notes.webm" controls></video>
 
 **Real-time collaboration** — multiple users editing the same note live, with presence.
 
-https://github.com/artifacts-oss/daylog/raw/main/resources/demos/collaboration.webm
+<video src="https://github.com/artifacts-oss/daylog/raw/main/resources/demos/collaboration.webm" controls></video>
 
 **Field encryption** — opt-in AES-256-GCM encryption for your content.
 
-https://github.com/artifacts-oss/daylog/raw/main/resources/demos/encryption.webm
+<video src="https://github.com/artifacts-oss/daylog/raw/main/resources/demos/encryption.webm" controls></video>
 
 **Public sharing** — share notes via public links with password, expiry, and view tracking.
 
-https://github.com/artifacts-oss/daylog/raw/main/resources/demos/sharing.webm
+<video src="https://github.com/artifacts-oss/daylog/raw/main/resources/demos/sharing.webm" controls></video>
 
 **Unsplash integration** — search and insert cover images without leaving the editor.
 
-https://github.com/artifacts-oss/daylog/raw/main/resources/demos/unsplash.webm
+<video src="https://github.com/artifacts-oss/daylog/raw/main/resources/demos/unsplash.webm" controls></video>
 
 ### Production Installation (Docker Compose)
 
