@@ -126,7 +126,7 @@ describe('Board Actions', () => {
     expect(prismaMock.board.findMany).toHaveBeenCalledWith({
       where: { userId: user.id },
       take: 10,
-      orderBy: [getSorting('created_desc')],
+      orderBy: getSorting('created_desc'),
     });
   });
 
@@ -137,7 +137,7 @@ describe('Board Actions', () => {
     expect(prismaMock.board.findMany).toHaveBeenCalledWith({
       where: { userId: user.id, favorite: true },
       take: undefined,
-      orderBy: [getSorting('created_desc')],
+      orderBy: getSorting('created_desc'),
     });
   });
 

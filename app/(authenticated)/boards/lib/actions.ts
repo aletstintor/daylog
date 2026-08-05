@@ -103,7 +103,7 @@ export async function getBoards(
     where: { userId: user?.id, ...(favorite ? { favorite: true } : {}) },
     // ponytail: favorites are few, return them all instead of paginating
     take: favorite ? undefined : perPage,
-    orderBy: [sorting],
+    orderBy: sorting,
   });
 
   if (!user.encryptionEnabled) return boards;

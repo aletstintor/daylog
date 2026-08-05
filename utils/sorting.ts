@@ -1,28 +1,24 @@
 import { Prisma } from "@/prisma/generated/client";
 
-export default function getSorting(sort: string) {
-    let sorting: Prisma.NoteOrderByWithRelationInput | Prisma.BoardOrderByWithRelationInput = {};
+type OrderBy = Prisma.NoteOrderByWithRelationInput | Prisma.BoardOrderByWithRelationInput;
+
+export default function getSorting(sort: string): OrderBy[] {
     switch (sort) {
         case 'created_desc':
-            sorting = { createdAt: 'desc' };
-            break;
+            return [{ createdAt: 'desc' }];
         case 'created_asc':
-            sorting = { createdAt: 'asc' };
-            break;
+            return [{ createdAt: 'asc' }];
         case 'updated_desc':
-            sorting = { updatedAt: 'desc' };
-            break;
+            return [{ updatedAt: 'desc' }];
         case 'updated_asc':
-            sorting = { updatedAt: 'asc' };
-            break;
+            return [{ updatedAt: 'asc' }];
         case 'title_desc':
-            sorting = { title: 'desc' };
-            break;
+            return [{ title: 'desc' }];
         case 'title_asc':
-            sorting = { title: 'asc' };
-            break;
+            return [{ title: 'asc' }];
+        case 'favorite_desc':
+            return [{ favorite: 'desc' }, { createdAt: 'desc' }];
         default:
-            sorting = { createdAt: 'desc' };
+            return [{ createdAt: 'desc' }];
     }
-    return sorting;
 }

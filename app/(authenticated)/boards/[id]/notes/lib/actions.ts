@@ -166,7 +166,7 @@ export async function getNotes(
     include: { boards: true },
     // ponytail: favorites are few, return them all instead of paginating
     take: favorite ? undefined : perPage,
-    orderBy: [sorting],
+    orderBy: sorting,
   });
 
   if (!user.encryptionEnabled) return notes;
