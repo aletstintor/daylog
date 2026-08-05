@@ -90,6 +90,7 @@ export async function getBoardsCount(): Promise<number> {
 export async function getBoards(
   sort: string,
   perPage: number = 10,
+  favorite = false,
 ): Promise<Board[] | null> {
   const { user } = await getCurrentSession();
 
@@ -99,8 +100,9 @@ export async function getBoards(
 
   const sorting = getSorting(sort);
   const boards = await prisma.board.findMany({
-    where: { userId: user?.id },
-    take: perPage,
+    where: { userId: user?.id, ...(favorite ? { favorite: true } : {}) },
+    // ponytail: favorites are few, return them all instead of paginating
+    take: favorite ? undefined : perPage,
     orderBy: [sorting],
   });
 

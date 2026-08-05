@@ -7,15 +7,13 @@ export default async function BoardsSection({
 }: {
   showFav: boolean;
 }) {
-  const allBoards = await getBoards('created_desc', 7);
+  const boards = await getBoards('created_desc', 7, showFav);
 
-  const filteredBoards =
-    allBoards
-      ?.filter((board: Board) => (showFav ? board.favorite : true))
-      .sort((a: Board, b: Board) => {
-        if (showFav) return 0;
-        return +b.favorite - +a.favorite;
-      }) || [];
+  const sortedBoards = showFav
+    ? (boards ?? [])
+    : [...(boards ?? [])].sort(
+        (a: Board, b: Board) => +b.favorite - +a.favorite,
+      );
 
-  return <BoardsGrid boards={filteredBoards} showFav={showFav} />;
+  return <BoardsGrid boards={sortedBoards} showFav={showFav} />;
 }

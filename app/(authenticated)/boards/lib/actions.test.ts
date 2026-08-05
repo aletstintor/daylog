@@ -130,6 +130,17 @@ describe('Board Actions', () => {
     });
   });
 
+  it('should get every favorite board without paginating', async () => {
+    prismaMock.board.findMany.mockResolvedValue([board as Board]);
+    const result = await getBoards('created_desc', 7, true);
+    expect(result).toEqual([board]);
+    expect(prismaMock.board.findMany).toHaveBeenCalledWith({
+      where: { userId: user.id, favorite: true },
+      take: undefined,
+      orderBy: [getSorting('created_desc')],
+    });
+  });
+
   it('should get a board by id', async () => {
     prismaMock.board.findFirst.mockResolvedValue(board as Board);
     const result = await getBoard(board.id!);
