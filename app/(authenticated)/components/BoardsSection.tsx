@@ -1,21 +1,16 @@
 import BoardsGrid from '@/app/partials/BoardsGrid';
 import { getBoards } from '@/app/(authenticated)/boards/lib/actions';
-import { Board } from '@/prisma/generated/client';
 
 export default async function BoardsSection({
   showFav,
 }: {
   showFav: boolean;
 }) {
-  const allBoards = await getBoards('created_desc', 7);
+  const boards = await getBoards(
+    showFav ? 'created_desc' : 'favorite_desc',
+    7,
+    showFav,
+  );
 
-  const filteredBoards =
-    allBoards
-      ?.filter((board: Board) => (showFav ? board.favorite : true))
-      .sort((a: Board, b: Board) => {
-        if (showFav) return 0;
-        return +b.favorite - +a.favorite;
-      }) || [];
-
-  return <BoardsGrid boards={filteredBoards} showFav={showFav} />;
+  return <BoardsGrid boards={boards ?? []} showFav={showFav} />;
 }

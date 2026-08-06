@@ -230,33 +230,38 @@ describe('Sorting Utils', () => {
   it('returns correct sorting object', () => {
     const sortings: {
       sorting: string;
-      expected:
+      expected: (
         | Prisma.NoteOrderByWithRelationInput
-        | Prisma.BoardOrderByRelationAggregateInput;
+        | Prisma.BoardOrderByRelationAggregateInput
+      )[];
     }[] = [
       {
         sorting: 'created_asc',
-        expected: { createdAt: 'asc' },
+        expected: [{ createdAt: 'asc' }],
       },
       {
         sorting: 'created_desc',
-        expected: { createdAt: 'desc' },
+        expected: [{ createdAt: 'desc' }],
       },
       {
         sorting: 'updated_asc',
-        expected: { updatedAt: 'asc' },
+        expected: [{ updatedAt: 'asc' }],
       },
       {
         sorting: 'updated_desc',
-        expected: { updatedAt: 'desc' },
+        expected: [{ updatedAt: 'desc' }],
       },
       {
         sorting: 'title_asc',
-        expected: { title: 'asc' },
+        expected: [{ title: 'asc' }],
       },
       {
         sorting: 'title_desc',
-        expected: { title: 'desc' },
+        expected: [{ title: 'desc' }],
+      },
+      {
+        sorting: 'favorite_desc',
+        expected: [{ favorite: 'desc' }, { createdAt: 'desc' }],
       },
     ];
 

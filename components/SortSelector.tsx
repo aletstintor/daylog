@@ -20,6 +20,7 @@ const sortOptions = [
   { labelKey: 'sortLongestUnchanged', value: 'updated_asc' },
   { labelKey: 'sortTitleAsc', value: 'title_asc' },
   { labelKey: 'sortTitleDesc', value: 'title_desc' },
+  { labelKey: 'sortFavoritesFirst', value: 'favorite_desc' },
 ];
 
 type SortSelectorProps = {

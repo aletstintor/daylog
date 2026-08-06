@@ -147,6 +147,7 @@ export async function getNotes(
   sort: string,
   perPage = 10,
   boardId?: number | null,
+  favorite = false,
 ): Promise<NoteWithBoards[] | null> {
   const { user } = await getCurrentSession();
 
@@ -156,13 +157,16 @@ export async function getNotes(
 
   const sorting = getSorting(sort);
   const notes = await prisma.note.findMany({
-    where:
-      boardId === null
+    where: {
+      ...(boardId === null
         ? { boards: { userId: user?.id } }
-        : { boards: { id: boardId, userId: user?.id } },
+        : { boards: { id: boardId, userId: user?.id } }),
+      ...(favorite ? { favorite: true } : {}),
+    },
     include: { boards: true },
-    take: perPage,
-    orderBy: [sorting],
+    // ponytail: favorites are few, return them all instead of paginating
+    take: favorite ? undefined : perPage,
+    orderBy: sorting,
   });
 
   if (!user.encryptionEnabled) return notes;

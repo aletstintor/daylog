@@ -6,10 +6,7 @@ export default async function NotesSection({
 }: {
   showFav: boolean;
 }) {
-  const notes = await getNotes('created_desc', 20);
+  const notes = await getNotes('created_desc', 20, null, showFav);
 
-  const filteredNotes =
-    notes?.filter((note) => (showFav ? note.favorite : true)) || [];
-
-  return <NotesGrid notes={filteredNotes} showFav={showFav} />;
+  return <NotesGrid notes={notes ?? []} showFav={showFav} />;
 }

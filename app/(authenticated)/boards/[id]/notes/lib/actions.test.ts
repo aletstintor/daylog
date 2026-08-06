@@ -172,7 +172,7 @@ describe('Note Actions', () => {
     expect(prismaMock.note.findMany).toHaveBeenCalledWith({
       where: { boards: { id: boardId, userId: user.id } },
       include: { boards: true },
-      orderBy: [getSorting('created_desc')],
+      orderBy: getSorting('created_desc'),
       take: 10,
     });
   });
@@ -220,7 +220,7 @@ describe('Note Actions', () => {
     expect(prismaMock.note.findMany).toHaveBeenCalledWith({
       where: { boards: { id: boardId, userId: user.id } },
       include: { boards: true },
-      orderBy: [getSorting('created_desc')],
+      orderBy: getSorting('created_desc'),
       take: 10,
     });
   });
