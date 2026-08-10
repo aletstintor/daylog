@@ -3,7 +3,7 @@
 import { CloudArrowDownIcon } from '@heroicons/react/24/outline';
 import { ChangeEvent, useActionState, useEffect, useRef, useState } from 'react';
 import Cropper from 'cropperjs';
-import { Image as ImageIcon, Trash2 } from 'lucide-react';
+import { AlertOctagon, Image as ImageIcon, Trash2 } from 'lucide-react';
 import { updateProfile, type SafeProfile } from '../lib/actions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -163,8 +163,22 @@ export default function ProfileInfo({ profile }: ProfileInfoType) {
               <p className="text-xs text-muted-foreground">{t('photoMaxSize')}</p>
             </div>
           </div>
-          {state?.errors?.profileImage && <p className="text-[12px] text-accent-red">{state.errors.profileImage}</p>}
-          {photoError && <p className="text-[12px] text-accent-red">{photoError}</p>}
+          {state?.errors?.profileImage && (
+            <div className="rounded-[12px] border border-border bg-secondary/20 p-4">
+              <p className="flex gap-2 text-[13px] font-medium leading-relaxed text-muted-foreground">
+                <AlertOctagon className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                {state.errors.profileImage}
+              </p>
+            </div>
+          )}
+          {photoError && (
+            <div className="rounded-[12px] border border-border bg-secondary/20 p-4">
+              <p className="flex gap-2 text-[13px] font-medium leading-relaxed text-muted-foreground">
+                <AlertOctagon className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                {photoError}
+              </p>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             <div className="space-y-2 relative pb-5">
               <Label htmlFor="name">{t('nameLabel')}</Label>

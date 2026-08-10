@@ -44,7 +44,8 @@ import {
 import { createAndVerifyTransporter } from '@/utils/email';
 import { User } from '@/prisma/generated/client';
 import { SECURITY_CONFIG } from '@/config/security';
-import { removeFile, saveBase64File } from '@/utils/storage';
+import { removeFile } from '@/utils/storage';
+import { saveAndGetImageFile } from '@/utils/file';
 import { getTranslations } from 'next-intl/server';
 
 export async function updateProfile(
@@ -98,7 +99,7 @@ export async function updateProfile(
       ? await prisma.user.findUnique({ where: { id: data.id }, select: { profileImage: true } })
       : null;
     const storedProfileImage = profileImageChanged && result.data.profileImage
-      ? saveBase64File(result.data.profileImage)
+      ? await saveAndGetImageFile(result.data.profileImage)
       : null;
 
     try {

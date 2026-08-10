@@ -34,13 +34,16 @@ const mocks = vi.hoisted(() => ({
   createAndVerifyTransporter: vi.fn().mockImplementation(() => ({
     sendMail: mocks.sendMail,
   })),
-  saveBase64File: vi.fn(() => 'storage/avatar.jpeg'),
+  saveAndGetImageFile: vi.fn().mockResolvedValue('storage/avatar.jpeg'),
   removeFile: vi.fn(),
 }));
 
 vi.mock('@/utils/storage', () => ({
-  saveBase64File: mocks.saveBase64File,
   removeFile: mocks.removeFile,
+}));
+
+vi.mock('@/utils/file', () => ({
+  saveAndGetImageFile: mocks.saveAndGetImageFile,
 }));
 
 vi.mock('next/navigation', () => ({
@@ -135,7 +138,7 @@ describe('Profile Actions', () => {
           profileImage: 'storage/avatar.jpeg',
         },
       });
-      expect(mocks.saveBase64File).toHaveBeenCalledWith('data:image/jpeg;base64,YQ==');
+      expect(mocks.saveAndGetImageFile).toHaveBeenCalledWith('data:image/jpeg;base64,YQ==');
       expect(mocks.removeFile).toHaveBeenCalledWith('storage/old.jpeg');
     });
 

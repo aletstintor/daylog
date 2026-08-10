@@ -396,6 +396,7 @@ describe('File Utils', () => {
     process.env.S3_REGION = 'us-east-1';
     process.env.S3_ACCESS_KEY_ID = 'key';
     process.env.S3_SECRET_ACCESS_KEY = 'secret';
+    process.env.S3_BUCKET = 'bucket';
 
     const base64 = 'data:image/png;base64,iVBORw0KGgo=';
     const result = await saveAndGetImageFile(base64);
@@ -411,6 +412,7 @@ describe('File Utils', () => {
     delete process.env.S3_REGION;
     delete process.env.S3_ACCESS_KEY_ID;
     delete process.env.S3_SECRET_ACCESS_KEY;
+    delete process.env.S3_BUCKET;
 
     const base64 = 'data:image/png;base64,iVBORw0KGgo=';
     const result = await saveAndGetImageFile(base64);
