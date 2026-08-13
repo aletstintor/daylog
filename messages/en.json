@@ -606,6 +606,11 @@
     "savedTitle": "Saved changes",
     "savedDescription": "Your changes have been saved!"
   },
+  "UpdateAvailable": {
+    "title": "New version available",
+    "description": "daylog {version} is available.",
+    "action": "View update"
+  },
   "LoginPage": {
     "tagline": "Your thoughts, organized and secure",
     "errorTitle": "Could not login",

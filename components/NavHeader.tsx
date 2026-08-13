@@ -22,12 +22,15 @@ import { signout } from '@/app/(authenticated)/lib/actions';
 import { useTranslations } from 'next-intl';
 
 import { User } from '@/prisma/generated/client';
+import type { AvailableUpdate } from '@/app/(authenticated)/lib/version';
+import UpdateAvailableMenuItem, { UpdateBadge } from './UpdateAvailableMenuItem';
 
 interface NavHeaderProps {
   user: User;
+  update?: AvailableUpdate | null;
 }
 
-export default function NavHeader({ user }: NavHeaderProps) {
+export default function NavHeader({ user, update }: NavHeaderProps) {
   const t = useTranslations('Navigation');
   const tRole = useTranslations('Roles');
 
@@ -45,7 +48,7 @@ export default function NavHeader({ user }: NavHeaderProps) {
         <NavThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-muted transition-colors outline-none">
+            <button className="relative flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-muted transition-colors outline-none">
               <UserAvatar
                 name={user.name}
                 email={user.email}
@@ -62,6 +65,7 @@ export default function NavHeader({ user }: NavHeaderProps) {
                   {tRole(user.role)}
                 </span>
               </div>
+              {update && <UpdateBadge />}
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
@@ -86,6 +90,12 @@ export default function NavHeader({ user }: NavHeaderProps) {
                   <span>{t('administration')}</span>
                 </Link>
               </DropdownMenuItem>
+            )}
+            {update && (
+              <>
+                <DropdownMenuSeparator />
+                <UpdateAvailableMenuItem update={update} />
+              </>
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem

@@ -607,6 +607,11 @@
     "savedTitle": "Änderungen gespeichert",
     "savedDescription": "Deine Änderungen wurden gespeichert!"
   },
+  "UpdateAvailable": {
+    "title": "Neue Version verfügbar",
+    "description": "daylog {version} ist verfügbar.",
+    "action": "Update anzeigen"
+  },
   "LoginPage": {
     "tagline": "Deine Gedanken, organisiert und sicher",
     "errorTitle": "Anmeldung fehlgeschlagen",

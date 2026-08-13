@@ -607,6 +607,11 @@
     "savedTitle": "Modifications enregistrees",
     "savedDescription": "Vos modifications ont ete enregistrees !"
   },
+  "UpdateAvailable": {
+    "title": "Nouvelle version disponible",
+    "description": "daylog {version} est disponible.",
+    "action": "Voir la mise à jour"
+  },
   "LoginPage": {
     "tagline": "Vos pensees, organisees et securisees",
     "errorTitle": "Connexion impossible",

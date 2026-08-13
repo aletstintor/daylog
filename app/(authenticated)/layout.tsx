@@ -4,6 +4,7 @@ import NavSidebar from '@/components/NavSidebar';
 import NavHeader from '@/components/NavHeader';
 import Page from '@/components/Page';
 import MainContent from '@/components/MainContent';
+import { getAvailableUpdate } from './lib/version';
 
 export default async function AuthenticatedLayout({
   children,
@@ -16,11 +17,13 @@ export default async function AuthenticatedLayout({
     return redirect('/login');
   }
 
+  const update = user.role === 'admin' ? await getAvailableUpdate() : null;
+
   return (
     <Page>
-      <NavSidebar user={user} />
+      <NavSidebar user={user} update={update} />
       <MainContent>
-        <NavHeader user={user} />
+        <NavHeader user={user} update={update} />
         {children}
       </MainContent>
     </Page>

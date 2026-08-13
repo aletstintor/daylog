@@ -606,6 +606,11 @@
     "savedTitle": "Cambios guardados",
     "savedDescription": "Tus cambios se guardaron correctamente."
   },
+  "UpdateAvailable": {
+    "title": "Nueva versión disponible",
+    "description": "daylog {version} está disponible.",
+    "action": "Ver actualización"
+  },
   "LoginPage": {
     "tagline": "Tus ideas, organizadas y seguras",
     "errorTitle": "No se pudo iniciar sesión",
