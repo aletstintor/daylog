@@ -5,6 +5,7 @@ import Image from 'next/image';
 import NavThemeToggle from '@/components/NavThemeToggle';
 import MDEditor from '@uiw/react-md-editor';
 import UserAvatar from '@/components/UserAvatar';
+import { getSharedFileUrl, processSharedMarkdown } from '@/utils/shareMarkdown';
 
 interface SharedNoteViewProps {
   note: {
@@ -27,28 +28,7 @@ export default function SharedNoteView({ note, token }: SharedNoteViewProps) {
 
   const getSharedImageUrl = (originalPath: string | null) => {
     if (!originalPath) return '';
-    if (originalPath.startsWith('http') || originalPath.startsWith('data:')) return originalPath;
-    // Ensure path is absolute for our proxy
-    const path = originalPath.startsWith('/')
-      ? originalPath
-      : `/${originalPath}`;
-    return `/api/v1/share/${token}/image${path}`;
-  };
-
-  const processMarkdown = (content: string) => {
-    if (!content) return '';
-    return content.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, path) => {
-      // Handle internal image API paths
-      if (path.includes('/api/v1/images?filePath=')) {
-        const filePath = path.split('filePath=')[1];
-        return `![${alt}](${getSharedImageUrl(decodeURIComponent(filePath))})`;
-      }
-      // Handle other absolute paths
-      if (path.startsWith('/')) {
-        return `![${alt}](${getSharedImageUrl(path)})`;
-      }
-      return match;
-    });
+    return getSharedFileUrl(originalPath, token);
   };
 
   return (
@@ -108,7 +88,7 @@ export default function SharedNoteView({ note, token }: SharedNoteViewProps) {
         <article className="prose prose-zinc dark:prose-invert max-w-none">
           <div data-color-mode={theme} className="markdown-content">
             <MDEditor.Markdown
-              source={processMarkdown(note.content || '*No content*')}
+              source={processSharedMarkdown(note.content || '*No content*', token)}
               style={{
                 backgroundColor: 'transparent',
                 color: 'inherit',

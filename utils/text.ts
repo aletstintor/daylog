@@ -6,7 +6,7 @@ export function truncateWord(text: string, limit: number = 15) {
 
 export function isBase64(str: string) {
   try {
-    const isBase64 = /^data:image\/[a-zA-Z]+;base64,/.test(str);
+    const isBase64 = /^data:([a-zA-Z0-9+.\/_-]+);base64,/.test(str);
     return isBase64;
   } catch (err) {
     return false;

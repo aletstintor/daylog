@@ -12,6 +12,7 @@ import { renderWithIntl } from '@/utils/test/renderWithIntl';
 const mocks = vi.hoisted(() => ({
   updateNote: vi.fn(),
   getPictures: vi.fn(),
+  getAttachments: vi.fn(),
   deleteImage: vi.fn(),
   savePicture: vi.fn(),
   deletePicture: vi.fn(),
@@ -37,6 +38,7 @@ Object.defineProperty(window, 'matchMedia', {
 vi.mock('../../lib/actions', () => ({
   updateNote: mocks.updateNote,
   getPictures: mocks.getPictures,
+  getAttachments: mocks.getAttachments,
   deleteImage: mocks.deleteImage,
   savePicture: mocks.savePicture,
   deletePicture: mocks.deletePicture,

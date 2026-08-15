@@ -6,6 +6,7 @@ import Image from 'next/image';
 import NavThemeToggle from '@/components/NavThemeToggle';
 import { removeMarkdownTags } from '@/utils/text';
 import MDEditor from '@uiw/react-md-editor';
+import { getSharedFileUrl, processSharedMarkdown } from '@/utils/shareMarkdown';
 import {
   Dialog,
   DialogContent,
@@ -38,26 +39,7 @@ export default function SharedBoardView({ board, token }: SharedBoardViewProps) 
 
   const getSharedImageUrl = (originalPath: string | null) => {
     if (!originalPath) return '';
-    if (originalPath.startsWith('http')) return originalPath;
-    // Ensure path is absolute for our proxy
-    const path = originalPath.startsWith('/') ? originalPath : `/${originalPath}`;
-    return `/api/v1/share/${token}/image${path}`;
-  };
-
-  const processMarkdown = (content: string) => {
-    if (!content) return '';
-    return content.replace(/!\[(.*?)\]\((.*?)\)/g, (match, alt, path) => {
-      // Handle internal image API paths
-      if (path.includes('/api/v1/images?filePath=')) {
-        const filePath = path.split('filePath=')[1];
-        return `![${alt}](${getSharedImageUrl(decodeURIComponent(filePath))})`;
-      }
-      // Handle other absolute paths
-      if (path.startsWith('/')) {
-        return `![${alt}](${getSharedImageUrl(path)})`;
-      }
-      return match;
-    });
+    return getSharedFileUrl(originalPath, token);
   };
 
   return (
@@ -192,7 +174,7 @@ export default function SharedBoardView({ board, token }: SharedBoardViewProps) 
                       <article className="prose prose-zinc dark:prose-invert max-w-none pb-12">
                         <div data-color-mode={theme} className="markdown-content">
                           <MDEditor.Markdown 
-                             source={processMarkdown(selectedNote.content || '*No content*')} 
+                             source={processSharedMarkdown(selectedNote.content || '*No content*', token)} 
                              style={{ backgroundColor: 'transparent', color: 'inherit', fontSize: '1.1rem', lineHeight: '1.7' }}
                           />
                         </div>

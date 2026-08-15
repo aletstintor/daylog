@@ -1,9 +1,9 @@
 import { getCurrentSession } from '@/app/login/lib/actions';
-import { prisma } from '@/prisma/client';
 import * as S3 from '@aws-sdk/client-s3';
 import { NextRequest } from 'next/server';
 import { s3Client } from './lib/s3Client';
 import sharp from 'sharp';
+import { canAccessFile, findAttachment, isImageMimeType, sanitizeDispositionFilename } from '@/utils/fileAccess';
 
 export async function GET(req: NextRequest) {
   try {
@@ -25,34 +25,8 @@ export async function GET(req: NextRequest) {
       return new Response('Key is required', { status: 400 });
     }
 
-    // Validate if the image belongs to current user OR they are a share recipient
-    const userImages = await prisma.board.findFirst({
-      where: {
-        userId: user.id,
-        OR: [{ imageUrl: key }, { notes: { some: { imageUrl: key } } }],
-      },
-    });
-
-    const userPictures = await prisma.picture.findFirst({
-      where: {
-        imageUrl: key,
-        OR: [{ notes: { boards: { userId: user.id } } }],
-      },
-    });
-
-    const sharedImage = !userImages && !userPictures && await prisma.share.findFirst({
-      where: {
-        scope: 'SPECIFIC',
-        recipients: { some: { userId: user.id } },
-        OR: [
-          { entityType: 'NOTE',  entityId: { in: await prisma.note.findMany({ where: { imageUrl: key }, select: { id: true } }).then(r => r.map(n => n.id)) } },
-          { entityType: 'BOARD', entityId: { in: await prisma.board.findMany({ where: { imageUrl: key }, select: { id: true } }).then(r => r.map(b => b.id)) } },
-        ],
-      },
-    });
-
-    if (!userImages && !userPictures && !sharedImage) {
-      return Response.json({ error: 'Image or picture not found' });
+    if (!(await canAccessFile(user.id, key))) {
+      return Response.json({ error: 'File not found' });
     }
 
     const command = new S3.GetObjectCommand({
@@ -64,6 +38,19 @@ export async function GET(req: NextRequest) {
 
     const body = await response.Body?.transformToByteArray();
     const buffer = Buffer.from(body ?? '');
+
+    // Non-image attachments are served as-is so the browser can open/download them
+    const attachment = await findAttachment(key);
+    if (attachment && !isImageMimeType(attachment.mimeType)) {
+      return new Response(buffer as BodyInit, {
+        status: 200,
+        headers: {
+          'Content-Type': attachment.mimeType || 'application/octet-stream',
+          'Content-Length': buffer.length.toString(),
+          'Content-Disposition': `inline; filename="${sanitizeDispositionFilename(attachment.fileName)}"`,
+        },
+      });
+    }
 
     // Optimize image with Sharp
     const optimizedImage = await sharp(buffer)

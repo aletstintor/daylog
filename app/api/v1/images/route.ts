@@ -1,8 +1,8 @@
 import { getCurrentSession } from '@/app/login/lib/actions';
-import { prisma } from '@/prisma/client';
 import fs from 'fs';
 import { NextRequest } from 'next/server';
 import sharp from 'sharp';
+import { canAccessFile, findAttachment, isImageMimeType, sanitizeDispositionFilename } from '@/utils/fileAccess';
 
 export async function GET(req: NextRequest) {
   const { user } = await getCurrentSession(req);
@@ -14,47 +14,34 @@ export async function GET(req: NextRequest) {
   const searchParams = req.nextUrl.searchParams;
   const filePath = searchParams.get('filePath');
 
-  if (!filePath) {
+  if (!filePath || typeof filePath !== 'string') {
     return Response.json({ error: 'Invalid file path' }, { status: 400 });
   }
 
-  // Validate if the image belongs to current user OR they are a share recipient
-  const userImages = await prisma.board.findFirst({
-    where: {
-      userId: user.id,
-      OR: [{ imageUrl: filePath }, { notes: { some: { imageUrl: filePath } } }],
-    },
-  });
-
-  const userPictures = await prisma.picture.findMany({
-    where: {
-      imageUrl: filePath,
-      OR: [{ notes: { boards: { userId: user.id } } }],
-    },
-  });
-
-  const sharedImage = !userImages && !userPictures.length && await prisma.share.findFirst({
-    where: {
-      scope: 'SPECIFIC',
-      recipients: { some: { userId: user.id } },
-      OR: [
-        { entityType: 'NOTE',  entityId: { in: await prisma.note.findMany({ where: { imageUrl: filePath }, select: { id: true } }).then(r => r.map(n => n.id)) } },
-        { entityType: 'BOARD', entityId: { in: await prisma.board.findMany({ where: { imageUrl: filePath }, select: { id: true } }).then(r => r.map(b => b.id)) } },
-      ],
-    },
-  });
-
-  if (!userImages && !userPictures.length && !sharedImage) {
-    return Response.json({ error: 'Image or picture not found' }, { status: 404 });
+  if (!(await canAccessFile(user.id, filePath))) {
+    return Response.json({ error: 'File not found' }, { status: 404 });
   }
 
-  if (typeof filePath !== 'string') {
-    return Response.json({ error: 'Invalid file path' }, { status: 400 });
+  let buffer: Buffer;
+  try {
+    // Read the file as a buffer
+    buffer = fs.readFileSync(filePath);
+  } catch (error) {
+    console.error('Error reading file:', error);
+    return Response.json({ error: 'File not found' }, { status: 404 });
   }
 
-  // Read the image file as a buffer
-  const imageBuffer = fs.readFileSync(filePath);
-  const buffer = Buffer.from(imageBuffer);
+  // Non-image attachments are served as-is so the browser can open/download them
+  const attachment = await findAttachment(filePath);
+  if (attachment && !isImageMimeType(attachment.mimeType)) {
+    return new Response(buffer as BodyInit, {
+      headers: {
+        'Content-Type': attachment.mimeType || 'application/octet-stream',
+        'Content-Length': buffer.length.toString(),
+        'Content-Disposition': `inline; filename="${sanitizeDispositionFilename(attachment.fileName)}"`,
+      },
+    });
+  }
 
   // Optimize image with Sharp
   const optimizedImage = await sharp(buffer)
@@ -62,16 +49,10 @@ export async function GET(req: NextRequest) {
     .webp()
     .toBuffer();
 
-  if (imageBuffer) {
-    return new Response(Buffer.from(optimizedImage), {
-      headers: {
-        'Content-Type': 'image/webp',
-        'Content-Length': optimizedImage.length.toString(),
-      },
-    });
-  } else {
-    return new Response('File not found or could not be converted', {
-      status: 404,
-    });
-  }
+  return new Response(Buffer.from(optimizedImage), {
+    headers: {
+      'Content-Type': 'image/webp',
+      'Content-Length': optimizedImage.length.toString(),
+    },
+  });
 }
