@@ -607,6 +607,11 @@
     "savedTitle": "Änderungen gespeichert",
     "savedDescription": "Deine Änderungen wurden gespeichert!"
   },
+  "UpdateAvailable": {
+    "title": "Neue Version verfügbar",
+    "description": "daylog {version} ist verfügbar.",
+    "action": "Update anzeigen"
+  },
   "LoginPage": {
     "tagline": "Deine Gedanken, organisiert und sicher",
     "errorTitle": "Anmeldung fehlgeschlagen",
@@ -750,6 +755,18 @@
   "NoteEditor": {
     "pictures": "Bilder",
     "picturesHelp": "Klicke, um an der Cursorposition ein Bild in den Editor einzufügen.",
+    "attachments": "Anhänge",
+    "attachmentsHelp": "Lade Dateien hoch und füge an der Cursorposition einen Link in den Editor ein.",
+    "noAttachments": "Keine Anhänge",
+    "uploadAttachment": "Anhang hochladen",
+    "uploading": "Wird hochgeladen...",
+    "deleteAttachment": "Anhang löschen",
+    "insertAttachmentLink": "Link am Cursor einfügen",
+    "downloadAttachment": "Herunterladen",
+    "toggleAttachments": "Anhänge umschalten",
+    "openAttachments": "Anhänge öffnen",
+    "closeAttachments": "Anhänge schließen",
+    "uploadError": "Beim Hochladen der Datei ist ein Fehler aufgetreten.",
     "noPictures": "Keine Bilder",
     "uploadPicture": "Bild hochladen",
     "deletePicture": "Bild löschen",

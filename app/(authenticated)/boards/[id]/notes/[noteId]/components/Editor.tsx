@@ -1,6 +1,6 @@
 'use client';
 
-import { Note, Picture } from '@/prisma/generated/client';
+import { Note, Picture, Attachment } from '@/prisma/generated/client';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   savePicture,
@@ -8,6 +8,7 @@ import {
   getPictures,
   deletePicture,
   deleteImage,
+  getAttachments,
 } from '../../lib/actions';
 import { adjustCursorOffset } from '@/utils/diff';
 import Image from 'next/image';
@@ -15,11 +16,16 @@ import { getImageUrlOrFile, resizeImage } from '@/utils/image';
 import MDEditor from '@uiw/react-md-editor';
 import rehypeSanitize from 'rehype-sanitize';
 import { useTheme } from 'next-themes';
-import { PhotoIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  PhotoIcon,
+  XMarkIcon,
+  PaperClipIcon,
+} from '@heroicons/react/24/outline';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import ChangeHistorySidebar from './ChangeHistorySidebar';
+import AttachmentSidebar from './AttachmentSidebar';
 import { History } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
@@ -73,7 +79,9 @@ export default function Editor({
 
   const [isSaving, setIsSaving] = useState(false);
   const [pictures, setPictures] = useState<Picture[]>([]);
+  const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isAttachmentsOpen, setIsAttachmentsOpen] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [sidebarRefreshKey, setSidebarRefreshKey] = useState(0);
 
@@ -89,6 +97,11 @@ export default function Editor({
     setPictures(pictures);
   }, [note.id]);
 
+  const loadAttachments = useCallback(async () => {
+    const attachments = (await getAttachments(note.id)) ?? [];
+    setAttachments(attachments);
+  }, [note.id]);
+
   useEffect(() => {
     window.addEventListener('storage', (event) => {
       if (event.key === `note-${note.id}`) {
@@ -99,7 +112,8 @@ export default function Editor({
       }
     });
     loadPictures();
-  }, [note.id, loadPictures]);
+    loadAttachments();
+  }, [note.id, loadPictures, loadAttachments]);
 
   // Sync local state only when the user navigates to a *different* note
   // (note.id changes) or on the very first mount. This prevents an autosave
@@ -229,6 +243,17 @@ export default function Editor({
     const rightContent = markdown.substring(textarea.selectionStart);
     const newContent =
       leftContent + '![alt text](' + imageUrl + ')' + rightContent;
+
+    setMarkdown(newContent);
+  };
+
+  const handlePlaceAttachmentLink = (fileName: string, fileUrl: string) => {
+    const textarea = document.getElementsByClassName(
+      'w-md-editor-text-input',
+    )[0] as HTMLTextAreaElement;
+    const leftContent = markdown.substring(0, textarea.selectionStart);
+    const rightContent = markdown.substring(textarea.selectionStart);
+    const newContent = leftContent + `[${fileName}](${fileUrl})` + rightContent;
 
     setMarkdown(newContent);
   };
@@ -388,6 +413,40 @@ export default function Editor({
           )}
         </AnimatePresence>
 
+        {/* Sidebar for Attachments */}
+        <AnimatePresence>
+          {isAttachmentsOpen && (
+            <motion.div
+              layout
+              initial={{
+                width: 0,
+                opacity: 0,
+              }}
+              animate={{
+                width:
+                  typeof window !== 'undefined' && window.innerWidth < 1024
+                    ? '100%'
+                    : 340,
+                opacity: 1,
+              }}
+              exit={{
+                width: 0,
+                opacity: 0,
+              }}
+              transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+              className="flex-shrink-0 flex flex-col overflow-hidden max-lg:!mr-0 max-lg:mb-6 lg:mb-0 self-start w-full lg:w-[340px] lg:mr-6"
+            >
+              <AttachmentSidebar
+                noteId={note.id}
+                attachments={attachments}
+                onAttachmentsChange={loadAttachments}
+                onInsertLink={handlePlaceAttachmentLink}
+                onClose={() => setIsAttachmentsOpen(false)}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Main Editor Area */}
         <motion.div
           layout
@@ -398,7 +457,10 @@ export default function Editor({
               <Button
                 onClick={() => {
                   setIsSidebarOpen(!isSidebarOpen);
-                  if (!isSidebarOpen) setShowHistory(false);
+                  if (!isSidebarOpen) {
+                    setShowHistory(false);
+                    setIsAttachmentsOpen(false);
+                  }
                 }}
                 variant="outline"
                 className={`rounded-[12px] border-border shadow-sm font-[600] transition-all px-3 md:px-4 ${
@@ -415,8 +477,33 @@ export default function Editor({
 
               <Button
                 onClick={() => {
+                  setIsAttachmentsOpen(!isAttachmentsOpen);
+                  if (!isAttachmentsOpen) {
+                    setShowHistory(false);
+                    setIsSidebarOpen(false);
+                  }
+                }}
+                variant="outline"
+                className={`rounded-[12px] border-border shadow-sm font-[600] transition-all px-3 md:px-4 ${
+                  isAttachmentsOpen
+                    ? 'bg-accent text-accent-foreground'
+                    : 'bg-background text-foreground hover:bg-accent'
+                }`}
+                title={t('toggleAttachments')}
+              >
+                <PaperClipIcon className="h-5 w-5 md:mr-2 text-muted-foreground" />
+                <span className="hidden md:inline">
+                  {isAttachmentsOpen ? t('closeAttachments') : t('openAttachments')}
+                </span>
+              </Button>
+
+              <Button
+                onClick={() => {
                   setShowHistory(!showHistory);
-                  if (!showHistory) setIsSidebarOpen(false);
+                  if (!showHistory) {
+                    setIsSidebarOpen(false);
+                    setIsAttachmentsOpen(false);
+                  }
                 }}
                 variant="outline"
                 className={`rounded-[12px] border-border shadow-sm font-[600] transition-all px-3 md:px-4 ${

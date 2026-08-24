@@ -4,6 +4,9 @@ import { NextRequest } from 'next/server';
 import sharp from 'sharp';
 import path from 'path';
 import { cookies } from 'next/headers';
+import * as S3 from '@aws-sdk/client-s3';
+import { s3Client } from '@/app/api/v1/storage/lib/s3Client';
+import { findAttachment, isImageMimeType, sanitizeDispositionFilename } from '@/utils/fileAccess';
 
 export async function GET(
   req: NextRequest,
@@ -48,9 +51,13 @@ export async function GET(
         OR: [
           { imageUrl: { in: pathsToTry } },
           { pictures: { some: { imageUrl: { in: pathsToTry } } } },
+          { attachments: { some: { fileUrl: { in: pathsToTry } } } },
         ],
       },
-      include: { pictures: { where: { imageUrl: { in: pathsToTry } } } },
+      include: {
+        pictures: { where: { imageUrl: { in: pathsToTry } } },
+        attachments: { where: { fileUrl: { in: pathsToTry } } },
+      },
     });
 
     if (note) {
@@ -58,6 +65,8 @@ export async function GET(
         actualFilePath = note.imageUrl;
       } else if (note.pictures.length > 0) {
         actualFilePath = note.pictures[0].imageUrl;
+      } else if (note.attachments.length > 0) {
+        actualFilePath = note.attachments[0].fileUrl;
       }
     }
   } else {
@@ -72,6 +81,7 @@ export async function GET(
                 OR: [
                   { imageUrl: { in: pathsToTry } },
                   { pictures: { some: { imageUrl: { in: pathsToTry } } } },
+                  { attachments: { some: { fileUrl: { in: pathsToTry } } } },
                 ],
               },
             },
@@ -84,9 +94,13 @@ export async function GET(
             OR: [
               { imageUrl: { in: pathsToTry } },
               { pictures: { some: { imageUrl: { in: pathsToTry } } } },
+              { attachments: { some: { fileUrl: { in: pathsToTry } } } },
             ],
           },
-          include: { pictures: { where: { imageUrl: { in: pathsToTry } } } },
+          include: {
+            pictures: { where: { imageUrl: { in: pathsToTry } } },
+            attachments: { where: { fileUrl: { in: pathsToTry } } },
+          },
         },
       },
     });
@@ -100,6 +114,8 @@ export async function GET(
           actualFilePath = note.imageUrl;
         } else if (note.pictures.length > 0) {
           actualFilePath = note.pictures[0].imageUrl;
+        } else if (note.attachments.length > 0) {
+          actualFilePath = note.attachments[0].fileUrl;
         }
       }
     }
@@ -122,6 +138,52 @@ export async function GET(
     );
   }
 
+  // S3-backed files are served directly from the bucket
+  if (actualFilePath.startsWith('S3-')) {
+    try {
+      if (!process.env.S3_BUCKET) {
+        return new Response('S3_BUCKET environment variable is not set', {
+          status: 500,
+        });
+      }
+      const command = new S3.GetObjectCommand({
+        Bucket: process.env.S3_BUCKET,
+        Key: actualFilePath,
+      });
+      const response = await s3Client.send(command);
+      const body = await response.Body?.transformToByteArray();
+      const buffer = Buffer.from(body ?? '');
+
+      const attachment = await findAttachment(actualFilePath);
+      if (attachment && !isImageMimeType(attachment.mimeType)) {
+        return new Response(buffer as BodyInit, {
+          headers: {
+            'Content-Type': attachment.mimeType || 'application/octet-stream',
+            'Content-Length': buffer.length.toString(),
+            'Content-Disposition': `inline; filename="${sanitizeDispositionFilename(attachment.fileName)}"`,
+            'Cache-Control': 'public, max-age=31536000, immutable',
+          },
+        });
+      }
+
+      const optimizedImage = await sharp(buffer)
+        .resize({ width: 1200, withoutEnlargement: true })
+        .webp()
+        .toBuffer();
+
+      return new Response(optimizedImage as BodyInit, {
+        headers: {
+          'Content-Type': 'image/webp',
+          'Content-Length': optimizedImage.length.toString(),
+          'Cache-Control': 'public, max-age=31536000, immutable',
+        },
+      });
+    } catch (error) {
+      console.error('S3 retrieval error:', error);
+      return new Response('Error retrieving file', { status: 500 });
+    }
+  }
+
   // SECURITY: Validate path traversal by ensuring the file is within the storage directory
   const rootStorage = path.resolve(process.env.STORAGE_PATH ?? './storage');
   const resolvedPath = path.resolve(actualFilePath);
@@ -138,8 +200,22 @@ export async function GET(
       return new Response('File not found', { status: 404 });
     }
 
-    const imageBuffer = fs.readFileSync(resolvedPath);
-    const optimizedImage = await sharp(imageBuffer)
+    const fileBuffer = fs.readFileSync(resolvedPath);
+
+    // Non-image attachments are served as-is so the browser can open/download them
+    const attachment = await findAttachment(actualFilePath);
+    if (attachment && !isImageMimeType(attachment.mimeType)) {
+      return new Response(fileBuffer as BodyInit, {
+        headers: {
+          'Content-Type': attachment.mimeType || 'application/octet-stream',
+          'Content-Length': fileBuffer.length.toString(),
+          'Content-Disposition': `inline; filename="${sanitizeDispositionFilename(attachment.fileName)}"`,
+          'Cache-Control': 'public, max-age=31536000, immutable',
+        },
+      });
+    }
+
+    const optimizedImage = await sharp(fileBuffer)
       .resize({ width: 1200, withoutEnlargement: true })
       .webp()
       .toBuffer();

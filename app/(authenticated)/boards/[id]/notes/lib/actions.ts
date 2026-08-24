@@ -3,13 +3,15 @@
 import { getCurrentSession } from '@/app/login/lib/actions';
 import { getCurrentSessionKey } from '@/app/(authenticated)/lib/encryptionKey';
 import { prisma } from '@/prisma/client';
-import { Note, Picture, Prisma } from '@/prisma/generated/client';
+import { Note, Picture, Attachment, Prisma } from '@/prisma/generated/client';
 import { saveAndGetImageFile } from '@/utils/file';
-import { removeFile } from '@/utils/storage';
+import { removeFile, generateFileFromBase64 } from '@/utils/storage';
 import { isBase64, isUrl } from '@/utils/text';
+import { SECURITY_CONFIG } from '@/config/security';
 import { encryptNoteFields, decryptNoteFields, decryptBoardFields, encryptField, decryptField } from '@/utils/encryption';
 
 import fs from 'fs';
+import path from 'path';
 import { NoteWithBoards } from './types';
 import getSorting from '@/utils/sorting';
 import { revalidatePath } from 'next/cache';
@@ -393,6 +395,130 @@ export async function getPictures(noteId: number): Promise<Picture[]> {
     });
 
     return pictures;
+  } catch (e) {
+    console.error(e);
+    return [];
+  }
+}
+
+export type AttachmentSaveResult =
+  | { success: true; attachment: Attachment }
+  | { success: false; error: string };
+
+export async function saveAttachment({
+  noteId,
+  fileName,
+  fileDataUrl,
+}: {
+  noteId: number;
+  fileName: string;
+  fileDataUrl: string;
+}): Promise<AttachmentSaveResult> {
+  try {
+    const { user } = await getCurrentSession();
+
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    if (!isBase64(fileDataUrl)) {
+      return {
+        success: false,
+        error: 'Invalid file format. File must be a Base64 data URL.',
+      };
+    }
+
+    const ext = path.extname(fileName).toLowerCase();
+    if (!SECURITY_CONFIG.FILE_UPLOAD.ALLOWED_EXTENSIONS.includes(ext)) {
+      return {
+        success: false,
+        error: `File extension "${ext}" is not allowed.`,
+      };
+    }
+
+    const { contentLength } = generateFileFromBase64(fileDataUrl);
+    if (contentLength > SECURITY_CONFIG.FILE_UPLOAD.MAX_FILE_SIZE) {
+      return {
+        success: false,
+        error: 'File exceeds the maximum allowed size.',
+      };
+    }
+
+    const note = await getNoteWithAccess(noteId, user.id);
+    if (!note) return { success: false, error: 'Note not found' };
+
+    const mimeType = fileDataUrl.slice(5, fileDataUrl.indexOf(';base64,'));
+    const urlKeyOrPath = await saveAndGetImageFile(fileDataUrl);
+
+    if (!urlKeyOrPath) {
+      return { success: false, error: 'Failed to save file' };
+    }
+
+    const attachment = await prisma.attachment.create({
+      data: {
+        notesId: note.id,
+        fileUrl: urlKeyOrPath,
+        fileName,
+        mimeType,
+        size: contentLength,
+      },
+    });
+
+    return { success: true, attachment };
+  } catch (e) {
+    console.error(e);
+    return { success: false, error: 'An error occurred while uploading the file' };
+  }
+}
+
+export async function deleteAttachment(
+  noteId: number,
+  attachmentId: number,
+): Promise<void> {
+  try {
+    const { user } = await getCurrentSession();
+
+    if (!user) {
+      return;
+    }
+
+    const note = await getNoteWithAccess(noteId, user.id);
+    if (!note) throw new Error('Note not found');
+
+    const attachment = await prisma.attachment.findFirst({
+      where: { id: attachmentId, notesId: noteId },
+    });
+
+    if (!attachment) {
+      throw new Error('Attachment not found');
+    }
+
+    const removed = removeFile(attachment.fileUrl);
+    if (removed) {
+      await prisma.attachment.delete({
+        where: { id: attachmentId },
+      });
+    }
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+export async function getAttachments(noteId: number): Promise<Attachment[]> {
+  try {
+    const { user } = await getCurrentSession();
+
+    if (!user) {
+      return [];
+    }
+
+    const note = await getNoteWithAccess(noteId, user.id);
+    if (!note) throw new Error('Note not found');
+
+    return prisma.attachment.findMany({
+      where: { notesId: noteId },
+      orderBy: { createdAt: 'desc' },
+    });
   } catch (e) {
     console.error(e);
     return [];

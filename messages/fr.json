@@ -607,6 +607,11 @@
     "savedTitle": "Modifications enregistrees",
     "savedDescription": "Vos modifications ont ete enregistrees !"
   },
+  "UpdateAvailable": {
+    "title": "Nouvelle version disponible",
+    "description": "daylog {version} est disponible.",
+    "action": "Voir la mise à jour"
+  },
   "LoginPage": {
     "tagline": "Vos pensees, organisees et securisees",
     "errorTitle": "Connexion impossible",
@@ -750,6 +755,18 @@
   "NoteEditor": {
     "pictures": "Images",
     "picturesHelp": "Cliquez pour inserer une image dans l'editeur a la position du curseur.",
+    "attachments": "Pièces jointes",
+    "attachmentsHelp": "Televersez des fichiers et inserez un lien dans l'editeur a la position du curseur.",
+    "noAttachments": "Aucune pièce jointe",
+    "uploadAttachment": "Televerser une pièce jointe",
+    "uploading": "Televersement...",
+    "deleteAttachment": "Supprimer la pièce jointe",
+    "insertAttachmentLink": "Inserer un lien au curseur",
+    "downloadAttachment": "Telecharger",
+    "toggleAttachments": "Basculer les pièces jointes",
+    "openAttachments": "Ouvrir les pièces jointes",
+    "closeAttachments": "Fermer les pièces jointes",
+    "uploadError": "Une erreur s'est produite lors du televersement du fichier.",
     "noPictures": "Aucune image",
     "uploadPicture": "Televerser une image",
     "deletePicture": "Supprimer l'image",

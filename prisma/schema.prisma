@@ -73,11 +73,12 @@ model Note {
   content   String?
   imageUrl  String?
   favorite  Boolean      @default(false)
-  boards    Board?       @relation(fields: [boardsId], references: [id], onDelete: Cascade)
-  boardsId  Int?
-  pictures  Picture[]
-  changes   NoteChange[]
-  createdAt DateTime     @default(now())
+  boards        Board?       @relation(fields: [boardsId], references: [id], onDelete: Cascade)
+  boardsId      Int?
+  pictures      Picture[]
+  attachments   Attachment[]
+  changes       NoteChange[]
+  createdAt     DateTime     @default(now())
   updatedAt DateTime     @default(now()) @updatedAt
 
   @@index([boardsId, createdAt])
@@ -95,6 +96,20 @@ model Picture {
   imageUrl  String
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+}
+
+model Attachment {
+  id        Int      @id @default(autoincrement())
+  notes     Note?    @relation(fields: [notesId], references: [id], onDelete: Cascade)
+  notesId   Int?
+  fileUrl   String
+  fileName  String
+  mimeType  String
+  size      Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([notesId])
 }
 
 model NoteChange {

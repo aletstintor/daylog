@@ -44,12 +44,15 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 
 import { User } from '@/prisma/generated/client';
+import type { AvailableUpdate } from '@/app/(authenticated)/lib/version';
+import UpdateAvailableMenuItem, { UpdateBadge } from './UpdateAvailableMenuItem';
 
 interface NavSidebarProps {
   user: User;
+  update?: AvailableUpdate | null;
 }
 
-export default function NavSidebar({ user }: NavSidebarProps) {
+export default function NavSidebar({ user, update }: NavSidebarProps) {
   const t = useTranslations('Navigation');
   const tRole = useTranslations('Roles');
   const tLocale = useTranslations('LocaleSwitcher');
@@ -190,7 +193,7 @@ export default function NavSidebar({ user }: NavSidebarProps) {
           <NavSearch />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center p-0.5 rounded-full hover:bg-muted transition-all outline-none">
+              <button className="relative flex items-center p-0.5 rounded-full hover:bg-muted transition-all outline-none">
                 <UserAvatar
                   name={user.name}
                   email={user.email}
@@ -199,6 +202,7 @@ export default function NavSidebar({ user }: NavSidebarProps) {
                   className="h-8 w-8 border-2 border-primary/10"
                   fallbackClassName="bg-primary text-xs font-bold text-primary-foreground"
                 />
+                {update && <UpdateBadge />}
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
@@ -234,6 +238,12 @@ export default function NavSidebar({ user }: NavSidebarProps) {
                     <span className="font-medium">{t('administration')}</span>
                   </Link>
                 </DropdownMenuItem>
+              )}
+              {update && (
+                <>
+                  <DropdownMenuSeparator className="my-1" />
+                  <UpdateAvailableMenuItem update={update} />
+                </>
               )}
               <DropdownMenuSeparator className="my-1" />
               {mounted && (

@@ -606,6 +606,11 @@
     "savedTitle": "Cambios guardados",
     "savedDescription": "Tus cambios se guardaron correctamente."
   },
+  "UpdateAvailable": {
+    "title": "Nueva versión disponible",
+    "description": "daylog {version} está disponible.",
+    "action": "Ver actualización"
+  },
   "LoginPage": {
     "tagline": "Tus ideas, organizadas y seguras",
     "errorTitle": "No se pudo iniciar sesión",
@@ -749,6 +754,18 @@
   "NoteEditor": {
     "pictures": "Imágenes",
     "picturesHelp": "Haz clic para insertar una imagen en el editor en la posición del cursor.",
+    "attachments": "Adjuntos",
+    "attachmentsHelp": "Sube archivos e inserta un enlace en el editor en la posición del cursor.",
+    "noAttachments": "No hay adjuntos",
+    "uploadAttachment": "Subir archivo",
+    "uploading": "Subiendo...",
+    "deleteAttachment": "Eliminar adjunto",
+    "insertAttachmentLink": "Insertar enlace en el cursor",
+    "downloadAttachment": "Descargar",
+    "toggleAttachments": "Alternar adjuntos",
+    "openAttachments": "Abrir adjuntos",
+    "closeAttachments": "Cerrar adjuntos",
+    "uploadError": "Ocurrió un error al subir el archivo.",
     "noPictures": "No hay imágenes",
     "uploadPicture": "Subir imagen",
     "deletePicture": "Eliminar imagen",
