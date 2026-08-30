@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, screen, waitFor } from '@testing-library/react';
 import { renderWithIntl } from '@/utils/test/renderWithIntl';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import UpdateSnapshotButton from './UpdateSnapshotButton';
 
 const mocks = vi.hoisted(() => ({
