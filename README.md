@@ -48,31 +48,11 @@ If you want to use the stable version of daylog, you can find it [here](https://
 - **Shared boards:** Share boards with other users and collaborate within a community space.
 - **Internationalization:** Available in English, Spanish, French, and German.
 
-### Demos
+### Demo
 
-**Boards** — organize notes by context, project, or as folders.
+A walkthrough of the full flow: creating a board, creating a note, editing the note, and sharing it, ending on the shared note's public page with password protection.
 
-![daylog_preview](resources/demos/boards.webp)
-
-**Notes** — plain text or Markdown, with images and favorites.
-
-![daylog_preview](resources/demos/notes.webp)
-
-**Real-time collaboration** — multiple users editing the same note live, with presence.
-
-![daylog_preview](resources/demos/collaboration.webp)
-
-**Field encryption** — opt-in AES-256-GCM encryption for your content.
-
-![daylog_preview](resources/demos/encryption.webp)
-
-**Public sharing** — share notes via public links with password, expiry, and view tracking.
-
-![daylog_preview](resources/demos/sharing.webp)
-
-**Unsplash integration** — search and insert cover images without leaving the editor.
-
-![daylog_preview](resources/demos/unsplash.webp)
+https://github.com/user-attachments/assets/200c1a5f-0819-42dd-98b4-a6e1f067a365
 
 ### Production Installation (Docker Compose)
 
