@@ -6,6 +6,8 @@ import Page from '@/components/Page';
 import MainContent from '@/components/MainContent';
 import { getAvailableUpdate } from './lib/version';
 import { getTopItems } from './lib/actions';
+import { getBoards } from './boards/lib/actions';
+import QuickNote from '@/components/QuickNote';
 
 export default async function AuthenticatedLayout({
   children,
@@ -18,10 +20,12 @@ export default async function AuthenticatedLayout({
     return redirect('/login');
   }
 
-  const [update, favorites, recent] = await Promise.all([
+  const [update, favorites, recent, boards] = await Promise.all([
     user.role === 'admin' ? getAvailableUpdate() : null,
     getTopItems(true),
     getTopItems(false),
+    // Most recently updated first: the quick-note default target.
+    getBoards('updated_desc', 50),
   ]);
 
   return (
@@ -31,6 +35,7 @@ export default async function AuthenticatedLayout({
         <NavHeader user={user} update={update} />
         {children}
       </MainContent>
+      <QuickNote boards={(boards ?? []).map(({ id, title }) => ({ id, title }))} />
     </Page>
   );
 }

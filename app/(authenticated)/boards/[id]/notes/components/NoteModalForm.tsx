@@ -18,6 +18,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { PencilSquareIcon } from '@heroicons/react/24/outline';
 import ImageSection from '@/components/ImageSection';
 import { useTranslations } from 'next-intl';
@@ -30,6 +37,8 @@ type NoteModalFormType = {
   mode: 'update' | 'create';
   isUnsplashAllowed?: boolean;
   trigger?: React.ReactNode;
+  // When set, the user picks the target board inside the modal (quick capture).
+  boards?: { id: number; title: string }[];
 };
 
 export default function NoteModalForm({
@@ -39,6 +48,7 @@ export default function NoteModalForm({
   mode,
   isUnsplashAllowed = false,
   trigger,
+  boards,
 }: NoteModalFormType) {
   const t = useTranslations('NoteModal');
   const router = useRouter();
@@ -46,6 +56,7 @@ export default function NoteModalForm({
   const [submiting, setSubmiting] = useState(false);
   const [imageFile, setImageFile] = useState<File>();
   const [imageUrl, setImageUrl] = useState<string>('');
+  const [targetBoardId, setTargetBoardId] = useState(boardId);
 
   const {
     register,
@@ -54,20 +65,23 @@ export default function NoteModalForm({
     reset,
   } = useForm<Note>();
 
-  const onSubmit: SubmitHandler<Note> = (data) => {
+  const onSubmit: SubmitHandler<Note> = async (data) => {
     setSubmiting(true);
 
-    if (mode === 'create') {
-      createNoteHandler(data, boardId);
-    } else {
-      updateNoteHandler(data);
+    try {
+      if (mode === 'create') {
+        // Keep the modal and draft open so the user can retry.
+        if (!(await createNoteHandler(data, targetBoardId))) return;
+      } else {
+        await updateNoteHandler(data);
+      }
+      setOpen(false);
+      setImageFile(undefined);
+      setImageUrl('');
+      reset();
+    } finally {
+      setSubmiting(false);
     }
-
-    setSubmiting(false);
-    setOpen(false);
-    setImageFile(undefined);
-    setImageUrl('');
-    reset();
   };
 
   async function uploadImage(noteId: number | null) {
@@ -87,10 +101,21 @@ export default function NoteModalForm({
     }
   }
 
-  const createNoteHandler = async (data: Note, boardId: number) => {
+  const createNoteHandler = async (
+    data: Note,
+    boardId: number,
+  ): Promise<boolean> => {
     const noteId = await createNote(data, boardId);
-    await uploadImage(noteId);
-    router.refresh();
+    if (!noteId) return false;
+    try {
+      await uploadImage(noteId);
+    } catch (error) {
+      // The note exists: don't fail the submit, or a retry would create a duplicate.
+      console.error('Image upload failed for new note', noteId, error);
+    }
+    // Land in the editor so the user can keep writing right away.
+    router.push(`/boards/${boardId}/notes/${noteId}`);
+    return true;
   };
 
   const updateNoteHandler = async (data: Note) => {
@@ -145,6 +170,26 @@ export default function NoteModalForm({
               defaultValue={note?.id}
               {...register('id', { required: true, valueAsNumber: true })}
             />
+          )}
+          {boards && (
+            <div className="space-y-2 relative pb-5">
+              <Label htmlFor="board">{t('boardLabel')}</Label>
+              <Select
+                value={String(targetBoardId)}
+                onValueChange={(v) => setTargetBoardId(Number(v))}
+              >
+                <SelectTrigger id="board">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {boards.map((b) => (
+                    <SelectItem key={b.id} value={String(b.id)}>
+                      {b.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           )}
           <div className="space-y-2 relative pb-5">
             <Label htmlFor="title">

@@ -163,7 +163,9 @@
     "saving": "Saving...",
     "create": "Create",
     "update": "Update",
-    "imageAlt": "Preview image of {title}"
+    "imageAlt": "Preview image of {title}",
+    "boardLabel": "Board",
+    "quickNote": "Quick note"
   },
   "NoteDelete": {
     "delete": "Delete note",

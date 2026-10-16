@@ -163,7 +163,9 @@
     "saving": "Wird gespeichert...",
     "create": "Erstellen",
     "update": "Aktualisieren",
-    "imageAlt": "Vorschaubild von {title}"
+    "imageAlt": "Vorschaubild von {title}",
+    "boardLabel": "Board",
+    "quickNote": "Schnellnotiz"
   },
   "NoteDelete": {
     "delete": "Notiz löschen",

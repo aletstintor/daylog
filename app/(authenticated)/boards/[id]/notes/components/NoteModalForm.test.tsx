@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   saveImage: vi.fn(),
   resizeImage: vi.fn(),
   refresh: vi.fn(),
+  push: vi.fn(),
   getImageUrlOrFile: vi.fn(() => 'https://dummy.com/test.jpg'),
 }));
 
@@ -34,6 +35,7 @@ vi.mock('@/utils/image', () => ({
 vi.mock('next/navigation', () => ({
   useRouter: vi.fn(() => ({
     refresh: vi.fn(),
+    push: mocks.push,
   })),
 }));
 
@@ -128,6 +130,38 @@ describe('NoteModalForm', () => {
         },
         1,
       );
+      expect(mocks.push).toHaveBeenCalledWith('/boards/1/notes/1');
+    });
+  });
+
+  it('shows board selector and creates in the default board', async () => {
+    mocks.createNote.mockResolvedValue(7);
+
+    render(
+      <NoteModalForm
+        boardId={2}
+        boards={[
+          { id: 2, title: 'Inbox' },
+          { id: 3, title: 'Work' },
+        ]}
+        modalId="quickNote"
+        mode="create"
+        open={true}
+      />,
+    );
+
+    expect(screen.getByLabelText('Board')).toHaveTextContent('Inbox');
+    fireEvent.change(screen.getByPlaceholderText('Your note title'), {
+      target: { value: 'Quick' },
+    });
+    fireEvent.click(screen.getByText('Create'));
+
+    await waitFor(() => {
+      expect(mocks.createNote).toHaveBeenCalledWith(
+        { title: 'Quick', content: '' },
+        2,
+      );
+      expect(mocks.push).toHaveBeenCalledWith('/boards/2/notes/7');
     });
   });
 

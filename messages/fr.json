@@ -163,7 +163,9 @@
     "saving": "Enregistrement...",
     "create": "Creer",
     "update": "Mettre a jour",
-    "imageAlt": "Image d'aperçu de {title}"
+    "imageAlt": "Image d'aperçu de {title}",
+    "boardLabel": "Tableau",
+    "quickNote": "Note rapide"
   },
   "NoteDelete": {
     "delete": "Supprimer la note",

@@ -163,7 +163,9 @@
     "saving": "Guardando...",
     "create": "Crear",
     "update": "Actualizar",
-    "imageAlt": "Imagen de vista previa de {title}"
+    "imageAlt": "Imagen de vista previa de {title}",
+    "boardLabel": "Tablero",
+    "quickNote": "Nota rápida"
   },
   "NoteDelete": {
     "delete": "Eliminar nota",
