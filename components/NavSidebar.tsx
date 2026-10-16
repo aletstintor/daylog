@@ -69,7 +69,7 @@ export default function NavSidebar({
   const tRole = useTranslations('Roles');
   const tLocale = useTranslations('LocaleSwitcher');
   const tTheme = useTranslations('Theme');
-  const tNote = useTranslations('NoteModal');
+  const tNote = useTranslations('NotesPage');
   const { theme, setTheme } = useTheme();
   const locale = useLocale();
   const [mounted, setMounted] = useState(false);
@@ -156,25 +156,30 @@ export default function NavSidebar({
 
         <div className="flex-1 flex flex-col py-6 overflow-y-auto overflow-x-hidden">
           {boards.length > 0 && (
-            <div className={cn('mb-4', isCollapsed ? 'flex justify-center px-3' : 'px-4')}>
+            <div className={cn('mb-2', isCollapsed ? 'flex justify-center px-3' : 'px-4')}>
               <NoteModalForm
                 modalId="quickNoteDesktop"
                 mode="create"
                 boardId={boards[0].id}
                 boards={boards}
                 trigger={
-                  <Button
-                    size={isCollapsed ? 'icon' : 'default'}
-                    title={tNote('quickNote')}
-                    className={cn(isCollapsed ? 'h-12 w-12 rounded-xl' : 'w-full gap-2')}
-                  >
-                    <PlusIcon className="h-5 w-5" />
-                    {isCollapsed ? (
-                      <span className="sr-only">{tNote('quickNote')}</span>
-                    ) : (
-                      tNote('quickNote')
+                  <button
+                    type="button"
+                    title={tNote('newNote')}
+                    className={cn(
+                      'group relative flex items-center rounded-xl border border-dashed border-muted-foreground/50 text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                      isCollapsed ? 'justify-center h-12 w-12' : 'w-full gap-3 px-3 py-[9px]', // 9px + 1px border = py-2.5 of nav links
                     )}
-                  </Button>
+                  >
+                    <PlusIcon className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
+                    {isCollapsed ? (
+                      <span className="sr-only">{tNote('newNote')}</span>
+                    ) : (
+                      <span className="font-bold text-sm tracking-tight whitespace-nowrap">
+                        {tNote('newNote')}
+                      </span>
+                    )}
+                  </button>
                 }
               />
             </div>
