@@ -12,7 +12,7 @@ import {
 } from '../lib/actions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import PasswordInput from '@/components/PasswordInput';
 import {
   Dialog,
   DialogContent,
@@ -74,6 +74,7 @@ export default function EncryptData({ profile, masterKeyConfigured = false }: Pr
   );
 }
 
+/** Renders a dialog to enable encryption using the profile's account password. */
 const EnableModal = ({ profile }: Props) => {
   const t = useTranslations('EncryptData');
   const [open, setOpen] = useState(false);
@@ -103,10 +104,9 @@ const EnableModal = ({ profile }: Props) => {
                 </p>
                 <div className="space-y-2">
                   <Label htmlFor="enc-enable-password">{t('passwordLabel')}</Label>
-                  <Input
+                  <PasswordInput
                     id="enc-enable-password"
                     name="password"
-                    type="password"
                     placeholder={t('passwordPlaceholder')}
                     className="h-[48px] rounded-[12px]"
                     required
@@ -152,6 +152,7 @@ const EnableModal = ({ profile }: Props) => {
   );
 };
 
+/** Renders a dialog to disable encryption using the profile's account password. */
 const DisableModal = ({ profile }: Props) => {
   const t = useTranslations('EncryptData');
   const [open, setOpen] = useState(false);
@@ -182,10 +183,9 @@ const DisableModal = ({ profile }: Props) => {
                 </p>
                 <div className="space-y-2">
                   <Label htmlFor="enc-disable-password">{t('passwordLabel')}</Label>
-                  <Input
+                  <PasswordInput
                     id="enc-disable-password"
                     name="password"
-                    type="password"
                     placeholder={t('passwordPlaceholder')}
                     className="h-[48px] rounded-[12px]"
                     required
@@ -231,6 +231,10 @@ const DisableModal = ({ profile }: Props) => {
   );
 };
 
+/**
+ * Renders recovery and deletion dialogs for the profile's locked encrypted data.
+ * Recovery submits the old password; deletion requires no password in this form.
+ */
 const LockedBanner = ({ profile }: Props) => {
   const t = useTranslations('EncryptData');
   const [recoverOpen, setRecoverOpen] = useState(false);
@@ -290,10 +294,9 @@ const LockedBanner = ({ profile }: Props) => {
                 </p>
                 <div className="space-y-2">
                   <Label htmlFor="old-password">{t('oldPasswordLabel')}</Label>
-                  <Input
+                  <PasswordInput
                     id="old-password"
                     name="oldPassword"
-                    type="password"
                     placeholder={t('oldPasswordPlaceholder')}
                     className="h-[48px] rounded-[12px]"
                     required

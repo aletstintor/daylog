@@ -1,11 +1,12 @@
 'use client';
 
 import { signup } from '@/app/register/lib/actions';
-import { EyeIcon, EyeSlashIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import { useActionState, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import PasswordInput from '@/components/PasswordInput';
 import {
   Dialog,
   DialogContent,
@@ -18,10 +19,10 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { useTranslations } from 'next-intl';
 
+/** Renders a user creation dialog and reloads the page after successful signup. */
 export default function UserModal() {
   const t = useTranslations('UserModal');
   const [state, action, pending] = useActionState(signup, undefined);
-  const [isShowPassword, setIsShowPassword] = useState(false);
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -80,32 +81,14 @@ export default function UserModal() {
             </div>
             <div className="space-y-2 relative pb-5">
               <Label htmlFor="password">{t('passwordLabel')}</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={isShowPassword ? 'text' : 'password'}
-                  name="password"
-                  defaultValue={state?.data?.password?.toString()}
-                  placeholder={t('passwordPlaceholder')}
-                  autoComplete="off"
-                  className={
-                    state?.errors?.password
-                      ? 'border-destructive pr-10'
-                      : 'pr-10'
-                  }
-                />
-                <button
-                  type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  onClick={() => setIsShowPassword(!isShowPassword)}
-                >
-                  {isShowPassword ? (
-                    <EyeSlashIcon className="h-4 w-4" />
-                  ) : (
-                    <EyeIcon className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
+              <PasswordInput
+                id="password"
+                name="password"
+                defaultValue={state?.data?.password?.toString()}
+                placeholder={t('passwordPlaceholder')}
+                autoComplete="off"
+                className={state?.errors?.password ? 'border-destructive' : ''}
+              />
               {state?.errors?.password && (
                 <p className="text-[12px] text-accent-red absolute -bottom-0 left-0">
                   {Array.isArray(state?.errors?.password)

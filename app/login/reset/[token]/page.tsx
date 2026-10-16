@@ -6,7 +6,7 @@ import { use, useActionState } from 'react';
 import { setPassword } from '../lib/actions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import PasswordInput from '@/components/PasswordInput';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
@@ -16,6 +16,10 @@ import {
 import { KeyIcon } from '@heroicons/react/24/outline';
 import { useTranslations } from 'next-intl';
 
+/**
+ * Renders a password reset form using the token resolved from route params.
+ * Replaces the form with a login link after the reset action succeeds.
+ */
 export default function Page({
   params,
 }: {
@@ -89,8 +93,7 @@ export default function Page({
 
                 <div className="space-y-2 relative pb-5">
                   <Label htmlFor="password">{t('passwordLabel')}</Label>
-                  <Input
-                    type="password"
+                  <PasswordInput
                     name="password"
                     id="password"
                     placeholder={t('passwordPlaceholder')}
@@ -109,8 +112,7 @@ export default function Page({
                   <Label htmlFor="confirmPassword">
                     {t('confirmPasswordLabel')}
                   </Label>
-                  <Input
-                    type="password"
+                  <PasswordInput
                     name="confirmPassword"
                     id="confirmPassword"
                     placeholder={t('confirmPasswordPlaceholder')}

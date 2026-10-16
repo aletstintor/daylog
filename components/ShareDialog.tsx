@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import PasswordInput from '@/components/PasswordInput';
 import { Label } from '@/components/ui/label';
 import {
   ShareIcon,
@@ -42,6 +43,11 @@ interface ShareableUser {
   profileImage: string | null;
 }
 
+/**
+ * Renders share creation for a note or board, with an optional custom trigger.
+ * Public links support a password, expiration, and one-time viewing; specific
+ * recipients can receive edit access to notes. Closing resets the share options.
+ */
 export default function ShareDialog({ entityType, entityId, trigger }: ShareDialogProps) {
   const t = useTranslations('ShareDialog');
   const [isOpen, setIsOpen] = useState(false);
@@ -220,8 +226,7 @@ export default function ShareDialog({ entityType, entityId, trigger }: ShareDial
                         <LockClosedIcon className="h-3 w-3" />
                         {t('passwordLabel')}
                       </Label>
-                      <Input
-                        type="password"
+                      <PasswordInput
                         placeholder={t('passwordPlaceholder')}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}

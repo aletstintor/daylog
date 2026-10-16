@@ -1,5 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import PasswordInput from '@/components/PasswordInput';
 import { cn } from '@/lib/utils';
 
 type FormFieldProps = {
@@ -14,6 +15,10 @@ type FormFieldProps = {
   className?: string;
 };
 
+/**
+ * Renders a labeled input and any supplied errors, with a visibility toggle for
+ * password fields. Uses name as the input ID; className styles the input.
+ */
 export default function FormField({
   label,
   name,
@@ -25,25 +30,28 @@ export default function FormField({
   autoComplete = 'off',
   className = '',
 }: FormFieldProps) {
+  const inputProps = {
+    defaultValue,
+    className: cn(
+      errors && 'border-destructive focus-visible:ring-destructive',
+      className,
+    ),
+    placeholder,
+    required,
+    autoComplete,
+  };
+
   return (
     <div className="space-y-2 relative pb-5">
       <Label htmlFor={name}>
         {label}
         {required && <span className="text-destructive ml-1">*</span>}
       </Label>
-      <Input
-        id={name}
-        name={name}
-        type={type}
-        defaultValue={defaultValue}
-        className={cn(
-          errors && 'border-destructive focus-visible:ring-destructive',
-          className,
-        )}
-        placeholder={placeholder}
-        required={required}
-        autoComplete={autoComplete}
-      />
+      {type === 'password' ? (
+        <PasswordInput id={name} name={name} {...inputProps} />
+      ) : (
+        <Input id={name} name={name} type={type} {...inputProps} />
+      )}
       {errors && (
         <p
           className="text-[12px] text-destructive relative bottom-0 left-0"
