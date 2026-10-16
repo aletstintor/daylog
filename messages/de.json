@@ -24,7 +24,10 @@
     "myAccount": "Mein Konto",
     "administration": "Verwaltung",
     "logout": "Abmelden",
-    "you": "Du"
+    "you": "Du",
+    "favorites": "Favoriten",
+    "recent": "Zuletzt",
+    "seeMore": "Mehr anzeigen"
   },
   "Roles": {
     "admin": "Administrator",
@@ -582,8 +585,7 @@
     "breadcrumb": "Startseite",
     "title": "Willkommen zurück, {name}",
     "description": "Du hast {count} aktive Pinnwand{count, plural, one {} other {en}}. Hier ist deine {activity}.",
-    "recentActivity": "letzte Aktivität",
-    "favoriteActivity": "favorisierte Aktivität"
+    "recentActivity": "letzte Aktivität"
   },
   "HomeTabs": {
     "boardsTitle": "Deine Pinnwände",
@@ -598,10 +600,6 @@
     "emptyDescriptionRecent": "Dein Arbeitsbereich ist ruhig. Beginne damit, deine Gedanken festzuhalten, indem du eine neue Notiz in einer deiner Pinnwände erstellst.",
     "emptyDescriptionFavorite": "Du hast noch keine Notizen als Favoriten markiert. Markiere wichtige Notizen mit einem Stern, um sie hier zu sehen.",
     "getStarted": "Loslegen"
-  },
-  "BoardFavSwitch": {
-    "recent": "Neueste",
-    "favorites": "Favoriten"
   },
   "Alerts": {
     "savedTitle": "Änderungen gespeichert",
@@ -819,5 +817,13 @@
   "PasswordInput": {
     "show": "Passwort anzeigen",
     "hide": "Passwort verbergen"
+  },
+  "FavoritesPage": {
+    "title": "Favoriten",
+    "description": "Alle deine Lieblingsboards und -notizen an einem Ort."
+  },
+  "RecentPage": {
+    "title": "Zuletzt bearbeitet",
+    "description": "Die Boards und Notizen, die du zuletzt bearbeitet hast."
   }
 }
