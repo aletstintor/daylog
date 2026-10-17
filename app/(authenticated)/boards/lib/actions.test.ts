@@ -9,6 +9,7 @@ import {
   getBoard,
   getBoards,
   getBoardsCount,
+  renameBoard,
   saveImage,
   setUserBoardsSort,
   updateBoard,
@@ -33,6 +34,16 @@ const mocks = vi.hoisted(() => ({
     enableS3: false,
   })),
   uploadFileS3: vi.fn(),
+  revalidatePath: vi.fn(),
+  getCurrentSessionKey: vi.fn(),
+}));
+
+vi.mock('@/app/(authenticated)/lib/encryptionKey', () => ({
+  getCurrentSessionKey: mocks.getCurrentSessionKey,
+}));
+
+vi.mock('next/cache', () => ({
+  revalidatePath: mocks.revalidatePath,
 }));
 
 vi.mock('@/app/api/v1/storage/lib/s3Storage', () => ({
@@ -89,6 +100,32 @@ describe('Board Actions', () => {
     });
   });
 
+  it('should rename an owned board and reject empty titles', async () => {
+    prismaMock.board.updateMany.mockResolvedValue({ count: 1 });
+
+    expect(await renameBoard(1, '  New  ')).toBe(true);
+    expect(prismaMock.board.updateMany).toHaveBeenCalledWith({
+      where: { id: 1, userId: user.id },
+      data: { title: 'New' },
+    });
+    expect(mocks.revalidatePath).toHaveBeenCalledWith('/boards/1/notes');
+    expect(mocks.revalidatePath).toHaveBeenCalledWith('/boards');
+    expect(await renameBoard(1, '   ')).toBe(false);
+
+    mocks.revalidatePath.mockClear();
+    prismaMock.board.updateMany.mockResolvedValue({ count: 0 });
+    expect(await renameBoard(2, 'New')).toBe(false);
+    expect(mocks.revalidatePath).not.toHaveBeenCalled();
+  });
+
+  it('should not rename a board in plaintext when the encryption key is unavailable', async () => {
+    mocks.getCurrentSession.mockResolvedValue({ user: { ...user, encryptionEnabled: true } });
+    mocks.getCurrentSessionKey.mockResolvedValue(null);
+
+    expect(await renameBoard(1, 'New')).toBe(false);
+    expect(prismaMock.board.updateMany).not.toHaveBeenCalled();
+  });
+
   it('should delete a board', async () => {
     prismaMock.note.findMany.mockResolvedValue([]);
     prismaMock.share.deleteMany.mockResolvedValue({ count: 0 });
@@ -126,7 +163,19 @@ describe('Board Actions', () => {
     expect(prismaMock.board.findMany).toHaveBeenCalledWith({
       where: { userId: user.id },
       take: 10,
+      skip: 0,
       orderBy: getSorting('created_desc'),
+    });
+  });
+
+  it('should skip boards already loaded', async () => {
+    prismaMock.board.findMany.mockResolvedValue([board as Board]);
+    await getBoards('title_asc', 100, false, 100);
+    expect(prismaMock.board.findMany).toHaveBeenCalledWith({
+      where: { userId: user.id },
+      take: 100,
+      skip: 100,
+      orderBy: getSorting('title_asc'),
     });
   });
 
@@ -137,6 +186,7 @@ describe('Board Actions', () => {
     expect(prismaMock.board.findMany).toHaveBeenCalledWith({
       where: { userId: user.id, favorite: true },
       take: undefined,
+      skip: undefined,
       orderBy: getSorting('created_desc'),
     });
   });

@@ -12,6 +12,8 @@ import {
   getNotes,
   getNotesCount,
   getPictures,
+  moveNote,
+  renameNote,
   saveImage,
   savePicture,
   updateNote,
@@ -38,6 +40,7 @@ const mocks = vi.hoisted(() => ({
   uploadFileS3: vi.fn(),
   existsSync: vi.fn(),
   revalidatePath: vi.fn(),
+  getCurrentSessionKey: vi.fn(),
 }));
 
 vi.mock('@/app/api/v1/storage/lib/s3Storage', () => ({
@@ -61,6 +64,10 @@ vi.mock('@/utils/storage', () => ({
     ext: 'jpg',
     contentLength: 6,
   }),
+}));
+
+vi.mock('@/app/(authenticated)/lib/encryptionKey', () => ({
+  getCurrentSessionKey: mocks.getCurrentSessionKey,
 }));
 
 vi.mock('next/cache', () => ({
@@ -142,6 +149,52 @@ describe('Note Actions', () => {
     expect(mocks.revalidatePath).toHaveBeenCalledWith(
       `/boards/${note.boardsId}/notes`,
     );
+  });
+
+  it('should move a note to another board owned by the user', async () => {
+    prismaMock.note.findFirst.mockResolvedValue({ id: 1, boardsId: 1 } as Note);
+    prismaMock.board.findFirst.mockResolvedValue({ id: 2 } as Board);
+
+    expect(await moveNote(1, 2)).toBe(true);
+    expect(prisma.note.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { boardsId: 2 },
+    });
+  });
+
+  it('should not move a note to a board the user does not own', async () => {
+    prismaMock.note.findFirst.mockResolvedValue({ id: 1, boardsId: 1 } as Note);
+    prismaMock.board.findFirst.mockResolvedValue(null);
+
+    expect(await moveNote(1, 99)).toBe(false);
+    expect(prisma.note.update).not.toHaveBeenCalled();
+  });
+
+  it('should rename an owned note and reject empty titles', async () => {
+    prismaMock.note.findFirst.mockResolvedValue({ id: 1, boardsId: 1 } as Note);
+
+    expect(await renameNote(1, '  New  ')).toBe(true);
+    expect(prisma.note.update).toHaveBeenCalledWith({
+      where: { id: 1 },
+      data: { title: 'New' },
+    });
+    expect(await renameNote(1, '   ')).toBe(false);
+  });
+
+  it('should not rename a note in plaintext when the encryption key is unavailable', async () => {
+    mocks.getCurrentSession.mockResolvedValue({ user: { ...user, encryptionEnabled: true } });
+    mocks.getCurrentSessionKey.mockResolvedValue(null);
+    prismaMock.note.findFirst.mockResolvedValue({ id: 1, boardsId: 1 } as Note);
+
+    expect(await renameNote(1, 'New')).toBe(false);
+    expect(prisma.note.update).not.toHaveBeenCalled();
+  });
+
+  it('should not rename a note the user does not own', async () => {
+    prismaMock.note.findFirst.mockResolvedValue(null);
+
+    expect(await renameNote(1, 'New')).toBe(false);
+    expect(prisma.note.update).not.toHaveBeenCalled();
   });
 
   it('should delete a note', async () => {
