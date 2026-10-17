@@ -24,7 +24,10 @@
     "myAccount": "Mon compte",
     "administration": "Administration",
     "logout": "Se deconnecter",
-    "you": "Vous"
+    "you": "Vous",
+    "favorites": "Favoris",
+    "recent": "Récents",
+    "seeMore": "Voir plus"
   },
   "Roles": {
     "admin": "Administrateur",
@@ -160,7 +163,9 @@
     "saving": "Enregistrement...",
     "create": "Creer",
     "update": "Mettre a jour",
-    "imageAlt": "Image d'aperçu de {title}"
+    "imageAlt": "Image d'aperçu de {title}",
+    "boardLabel": "Tableau",
+    "quickNote": "Note rapide"
   },
   "NoteDelete": {
     "delete": "Supprimer la note",
@@ -171,6 +176,15 @@
     "cancel": "Annuler",
     "deleting": "Suppression...",
     "confirm": "Confirmer la suppression"
+  },
+  "NoteMove": {
+    "move": "Déplacer la note",
+    "title": "Déplacer la note",
+    "boardLabel": "Tableau de destination",
+    "placeholder": "Sélectionnez un tableau",
+    "cancel": "Annuler",
+    "moving": "Déplacement...",
+    "confirm": "Déplacer"
   },
   "AdminPage": {
     "title": "Configuration",
@@ -582,8 +596,7 @@
     "breadcrumb": "Accueil",
     "title": "Bon retour, {name}",
     "description": "Vous avez {count} tableau{count, plural, one {} other {x}} actif{count, plural, one {} other {s}}. Voici votre {activity}.",
-    "recentActivity": "activite recente",
-    "favoriteActivity": "activite favorite"
+    "recentActivity": "activite recente"
   },
   "HomeTabs": {
     "boardsTitle": "Vos tableaux",
@@ -598,10 +611,6 @@
     "emptyDescriptionRecent": "Votre espace de travail est calme. Commencez a capturer vos pensees en creant une nouvelle note dans l'un de vos tableaux.",
     "emptyDescriptionFavorite": "Vous n'avez encore marque aucune note comme favorite. Ajoutez une etoile a vos notes importantes pour les voir ici.",
     "getStarted": "Commencer"
-  },
-  "BoardFavSwitch": {
-    "recent": "Recents",
-    "favorites": "Favoris"
   },
   "Alerts": {
     "savedTitle": "Modifications enregistrees",
@@ -752,6 +761,10 @@
       "unexpectedError": "Une erreur s'est produite lors de la creation de votre compte."
     }
   },
+  "InlineTitle": {
+    "titleLabel": "Titre",
+    "titlePlaceholder": "Titre"
+  },
   "NoteEditor": {
     "pictures": "Images",
     "picturesHelp": "Cliquez pour inserer une image dans l'editeur a la position du curseur.",
@@ -815,5 +828,54 @@
   },
   "NoteDetailPage": {
     "updatedAt": "Derniere mise a jour le {date} a {time}"
+  },
+  "PasswordInput": {
+    "show": "Afficher le mot de passe",
+    "hide": "Masquer le mot de passe"
+  },
+  "FavoritesPage": {
+    "title": "Favoris",
+    "description": "Tous vos tableaux et notes favoris au même endroit."
+  },
+  "RecentPage": {
+    "title": "Récents",
+    "description": "Les tableaux et notes que vous avez modifiés récemment."
+  },
+  "HomeDashboard": {
+    "continueTitle": "Reprenez là où vous en étiez",
+    "continueOpen": "Ouvrir la note",
+    "statsTitle": "Votre résumé",
+    "statNotesWeek": "Notes cette semaine",
+    "statNotesTotal": "Total des notes",
+    "statInBoards": "dans {count} tableau{count, plural, one {} other {x}}",
+    "statEditsWeek": "Modifications (7 jours)",
+    "statShareViews": "Vues des partages",
+    "statViewsWeek": "+{count} cette semaine",
+    "activityTitle": "Activité",
+    "activityRange": "12 derniers mois",
+    "activitySummary": "{total, plural, one {# modification} other {# modifications}} · série en cours : {streak, plural, one {# jour} other {# jours}}",
+    "activityDay": "{day} : {count, plural, one {# modification} other {# modifications}}",
+    "onThisDayTitle": "Il y a un jour comme aujourd’hui",
+    "monthsAgo": "Il y a {count} mois",
+    "yearsAgo": "{count, plural, one {Il y a # an} other {Il y a # ans}}",
+    "forgottenTitle": "Notes oubliées",
+    "forgottenRange": "90+ jours",
+    "review": "Revoir",
+    "expiringTitle": "Partages bientôt expirés",
+    "entityNote": "Note",
+    "entityBoard": "Tableau",
+    "expiringViews": "{count, plural, one {# vue} other {# vues}}",
+    "continueEmpty": "Vous n’avez pas encore de notes. Créez-en une dans un tableau pour la voir ici.",
+    "onThisDayEmpty": "Aucune de vos notes n’a été créée un jour comme aujourd’hui les mois ou années précédents.",
+    "forgottenEmpty": "Rien d’oublié : toutes vos notes ont été modifiées ces 90 derniers jours.",
+    "expiringEmpty": "Aucun partage n’expire dans les 7 prochains jours.",
+    "statViewsLive": "Vues des 7 derniers jours",
+    "streakDays": "{count, plural, one {# jour} other {# jours}}",
+    "streakLabel": "Série actuelle",
+    "yearEdits": "{count, plural, one {# modification} other {# modifications}} cette année",
+    "legendLess": "Moins",
+    "legendMore": "Plus",
+    "onThisDayCount": "{count, plural, one {# souvenir} other {# souvenirs}}",
+    "expiringRange": "7 jours"
   }
 }

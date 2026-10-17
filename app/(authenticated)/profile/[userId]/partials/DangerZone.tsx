@@ -6,7 +6,7 @@ import { deleteAccount } from '../lib/actions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import PasswordInput from '@/components/PasswordInput';
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,7 @@ type BackupType = {
   };
 };
 
+/** Renders a password confirmation dialog for deleting the supplied profile. */
 export default function DangerZone({ profile }: BackupType) {
   const t = useTranslations('DangerZone');
   const [open, setOpen] = useState(false);
@@ -71,8 +72,7 @@ export default function DangerZone({ profile }: BackupType) {
                   <div className="text-[12px] font-bold text-muted-foreground uppercase tracking-tight ml-1">
                     {t('passwordLabel')}
                   </div>
-                  <Input
-                    type="password"
+                  <PasswordInput
                     name="password"
                     placeholder={t('passwordPlaceholder')}
                     className={`h-[48px] rounded-[12px] border-border/60 bg-secondary/5 px-4 font-medium ${

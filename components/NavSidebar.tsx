@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { FAST } from '@/lib/motion';
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -16,8 +17,10 @@ import {
   MoonIcon,
   SunIcon,
   LanguageIcon,
+  PlusIcon,
 } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
+import NoteModalForm from '@/app/(authenticated)/boards/[id]/notes/components/NoteModalForm';
 import UserAvatar from './UserAvatar';
 import {
   DropdownMenu,
@@ -45,18 +48,28 @@ import { useTheme } from 'next-themes';
 
 import { User } from '@/prisma/generated/client';
 import type { AvailableUpdate } from '@/app/(authenticated)/lib/version';
+import type { QuickLinks } from '@/components/NavBar';
+// '@/app/(authenticated)/lib/actions';
 import UpdateAvailableMenuItem, { UpdateBadge } from './UpdateAvailableMenuItem';
 
 interface NavSidebarProps {
   user: User;
   update?: AvailableUpdate | null;
+  quickLinks?: QuickLinks;
+  boards?: { id: number; title: string }[];
 }
 
-export default function NavSidebar({ user, update }: NavSidebarProps) {
+export default function NavSidebar({
+  user,
+  update,
+  quickLinks,
+  boards = [],
+}: NavSidebarProps) {
   const t = useTranslations('Navigation');
   const tRole = useTranslations('Roles');
   const tLocale = useTranslations('LocaleSwitcher');
   const tTheme = useTranslations('Theme');
+  const tNote = useTranslations('NotesPage');
   const { theme, setTheme } = useTheme();
   const locale = useLocale();
   const [mounted, setMounted] = useState(false);
@@ -93,7 +106,7 @@ export default function NavSidebar({ user, update }: NavSidebarProps) {
       <motion.aside
         initial={false}
         animate={{ width: isCollapsed ? 80 : 240 }}
-        transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+        transition={FAST}
         className="hidden md:flex flex-col border-r border-border bg-background h-screen sticky top-0 z-50"
       >
         <div className="flex items-center justify-center h-20 border-b border-border relative transition-all duration-300">
@@ -103,7 +116,7 @@ export default function NavSidebar({ user, update }: NavSidebarProps) {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+              transition={FAST}
               className="flex items-center justify-center"
             >
               <Link
@@ -142,7 +155,36 @@ export default function NavSidebar({ user, update }: NavSidebarProps) {
         </div>
 
         <div className="flex-1 flex flex-col py-6 overflow-y-auto overflow-x-hidden">
-          <NavBar user={user} isCollapsed={isCollapsed} />
+          {boards.length > 0 && (
+            <div className={cn('mb-2', isCollapsed ? 'flex justify-center px-3' : 'px-4')}>
+              <NoteModalForm
+                modalId="quickNoteDesktop"
+                mode="create"
+                boardId={boards[0].id}
+                boards={boards}
+                trigger={
+                  <button
+                    type="button"
+                    title={tNote('newNote')}
+                    className={cn(
+                      'group relative flex items-center rounded-xl border border-dashed border-muted-foreground/50 text-muted-foreground hover:bg-accent hover:text-foreground transition-all duration-300 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+                      isCollapsed ? 'justify-center h-12 w-12' : 'w-full gap-3 px-3 py-[9px]', // 9px + 1px border = py-2.5 of nav links
+                    )}
+                  >
+                    <PlusIcon className="h-5 w-5 transition-transform duration-300 group-hover:scale-110" />
+                    {isCollapsed ? (
+                      <span className="sr-only">{tNote('newNote')}</span>
+                    ) : (
+                      <span className="font-bold text-sm tracking-tight whitespace-nowrap">
+                        {tNote('newNote')}
+                      </span>
+                    )}
+                  </button>
+                }
+              />
+            </div>
+          )}
+          <NavBar user={user} isCollapsed={isCollapsed} quickLinks={quickLinks} />
         </div>
       </motion.aside>
 
@@ -173,7 +215,7 @@ export default function NavSidebar({ user, update }: NavSidebarProps) {
               </SheetTitle>
             </SheetHeader>
             <div className="flex-1 flex flex-col py-6 overflow-y-auto">
-              <NavBar user={user} />
+              <NavBar user={user} quickLinks={quickLinks} />
             </div>
           </SheetContent>
         </Sheet>

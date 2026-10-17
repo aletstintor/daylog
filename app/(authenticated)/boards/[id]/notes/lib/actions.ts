@@ -118,6 +118,44 @@ export async function updateNote(note: Note): Promise<Note | null> {
   return updatedNote;
 }
 
+export async function renameNote(noteId: number, title: string): Promise<boolean> {
+  const { user } = await getCurrentSession();
+  const newTitle = title.trim();
+  if (!user || !newTitle) return false;
+
+  const note = await prisma.note.findFirst({ where: { id: noteId, boards: { userId: user.id } } });
+  if (!note) return false;
+
+  const key = user.encryptionEnabled ? await getCurrentSessionKey() : null;
+  if (user.encryptionEnabled && !key) return false;
+  await prisma.note.update({
+    where: { id: noteId },
+    data: { title: key ? encryptField(newTitle, key) : newTitle },
+  });
+
+  revalidatePath(`/boards/${note.boardsId}/notes`);
+  return true;
+}
+
+export async function moveNote(noteId: number, boardId: number): Promise<boolean> {
+  const { user } = await getCurrentSession();
+
+  if (!user) {
+    return false;
+  }
+
+  // Both the note's current board and the target board must belong to the user.
+  const note = await prisma.note.findFirst({ where: { id: noteId, boards: { userId: user.id } } });
+  const target = await prisma.board.findFirst({ where: { id: boardId, userId: user.id } });
+  if (!note || !target) return false;
+
+  await prisma.note.update({ where: { id: noteId }, data: { boardsId: boardId } });
+
+  revalidatePath(`/boards/${note.boardsId}/notes`);
+  revalidatePath(`/boards/${boardId}/notes`);
+  return true;
+}
+
 export async function deleteNote(note: Note): Promise<Note | null> {
   const { user } = await getCurrentSession();
 

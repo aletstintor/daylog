@@ -1,5 +1,6 @@
 'use server';
 
+import { revalidatePath } from 'next/cache';
 import { getCurrentSession } from '@/app/login/lib/actions';
 import { getCurrentSessionKey } from '@/app/(authenticated)/lib/encryptionKey';
 import { prisma } from '@/prisma/client';
@@ -8,7 +9,7 @@ import { saveAndGetImageFile } from '@/utils/file';
 import getSorting from '@/utils/sorting';
 import { removeFile } from '@/utils/storage';
 import { isBase64, isUrl } from '@/utils/text';
-import { encryptBoardFields, decryptBoardFields } from '@/utils/encryption';
+import { encryptBoardFields, decryptBoardFields, encryptField } from '@/utils/encryption';
 
 import fs from 'fs';
 
@@ -53,6 +54,24 @@ export async function updateBoard(board: Board): Promise<Board | null> {
   return key ? decryptBoardFields(updatedBoard, key) : updatedBoard;
 }
 
+export async function renameBoard(boardId: number, title: string): Promise<boolean> {
+  const { user } = await getCurrentSession();
+  const newTitle = title.trim();
+  if (!user || !newTitle) return false;
+
+  const key = user.encryptionEnabled ? await getCurrentSessionKey() : null;
+  if (user.encryptionEnabled && !key) return false;
+  const { count } = await prisma.board.updateMany({
+    where: { id: boardId, userId: user.id },
+    data: { title: key ? encryptField(newTitle, key) : newTitle },
+  });
+  if (count === 0) return false;
+
+  revalidatePath(`/boards/${boardId}/notes`);
+  revalidatePath('/boards');
+  return true;
+}
+
 export async function deleteBoard(board: Board): Promise<Board | null> {
   const { user } = await getCurrentSession();
 
@@ -91,6 +110,7 @@ export async function getBoards(
   sort: string,
   perPage: number = 10,
   favorite = false,
+  skip = 0,
 ): Promise<Board[] | null> {
   const { user } = await getCurrentSession();
 
@@ -103,6 +123,7 @@ export async function getBoards(
     where: { userId: user?.id, ...(favorite ? { favorite: true } : {}) },
     // ponytail: favorites are few, return them all instead of paginating
     take: favorite ? undefined : perPage,
+    skip: favorite ? undefined : skip,
     orderBy: sorting,
   });
 

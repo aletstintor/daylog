@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import PasswordInput from '@/components/PasswordInput';
 import { Label } from '@/components/ui/label';
 import {
   ShareIcon,
@@ -42,6 +43,11 @@ interface ShareableUser {
   profileImage: string | null;
 }
 
+/**
+ * Renders share creation for a note or board, with an optional custom trigger.
+ * Public links support a password, expiration, and one-time viewing; specific
+ * recipients can receive edit access to notes. Closing resets the share options.
+ */
 export default function ShareDialog({ entityType, entityId, trigger }: ShareDialogProps) {
   const t = useTranslations('ShareDialog');
   const [isOpen, setIsOpen] = useState(false);
@@ -220,8 +226,7 @@ export default function ShareDialog({ entityType, entityId, trigger }: ShareDial
                         <LockClosedIcon className="h-3 w-3" />
                         {t('passwordLabel')}
                       </Label>
-                      <Input
-                        type="password"
+                      <PasswordInput
                         placeholder={t('passwordPlaceholder')}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
@@ -236,6 +241,10 @@ export default function ShareDialog({ entityType, entityId, trigger }: ShareDial
                       <Input
                         type="datetime-local"
                         value={expiresAt}
+                        // The browser reports '' until date and time are both set, so prefill 23:59 and let the user adjust the day.
+                        onFocus={() => {
+                          if (!expiresAt) setExpiresAt(`${new Date().toLocaleDateString('sv-SE')}T23:59`);
+                        }}
                         onChange={(e) => setExpiresAt(e.target.value)}
                         className="h-10 rounded-xl border-border bg-muted/30 focus:bg-background transition-all text-sm"
                       />

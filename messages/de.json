@@ -24,7 +24,10 @@
     "myAccount": "Mein Konto",
     "administration": "Verwaltung",
     "logout": "Abmelden",
-    "you": "Du"
+    "you": "Du",
+    "favorites": "Favoriten",
+    "recent": "Zuletzt",
+    "seeMore": "Mehr anzeigen"
   },
   "Roles": {
     "admin": "Administrator",
@@ -160,7 +163,9 @@
     "saving": "Wird gespeichert...",
     "create": "Erstellen",
     "update": "Aktualisieren",
-    "imageAlt": "Vorschaubild von {title}"
+    "imageAlt": "Vorschaubild von {title}",
+    "boardLabel": "Board",
+    "quickNote": "Schnellnotiz"
   },
   "NoteDelete": {
     "delete": "Notiz löschen",
@@ -171,6 +176,15 @@
     "cancel": "Abbrechen",
     "deleting": "Wird gelöscht...",
     "confirm": "Löschen bestätigen"
+  },
+  "NoteMove": {
+    "move": "Notiz verschieben",
+    "title": "Notiz verschieben",
+    "boardLabel": "Zielboard",
+    "placeholder": "Board auswählen",
+    "cancel": "Abbrechen",
+    "moving": "Wird verschoben...",
+    "confirm": "Verschieben"
   },
   "AdminPage": {
     "title": "Konfiguration",
@@ -582,8 +596,7 @@
     "breadcrumb": "Startseite",
     "title": "Willkommen zurück, {name}",
     "description": "Du hast {count} aktive Pinnwand{count, plural, one {} other {en}}. Hier ist deine {activity}.",
-    "recentActivity": "letzte Aktivität",
-    "favoriteActivity": "favorisierte Aktivität"
+    "recentActivity": "letzte Aktivität"
   },
   "HomeTabs": {
     "boardsTitle": "Deine Pinnwände",
@@ -598,10 +611,6 @@
     "emptyDescriptionRecent": "Dein Arbeitsbereich ist ruhig. Beginne damit, deine Gedanken festzuhalten, indem du eine neue Notiz in einer deiner Pinnwände erstellst.",
     "emptyDescriptionFavorite": "Du hast noch keine Notizen als Favoriten markiert. Markiere wichtige Notizen mit einem Stern, um sie hier zu sehen.",
     "getStarted": "Loslegen"
-  },
-  "BoardFavSwitch": {
-    "recent": "Neueste",
-    "favorites": "Favoriten"
   },
   "Alerts": {
     "savedTitle": "Änderungen gespeichert",
@@ -752,6 +761,10 @@
       "unexpectedError": "Beim Erstellen deines Kontos ist ein Fehler aufgetreten."
     }
   },
+  "InlineTitle": {
+    "titleLabel": "Titel",
+    "titlePlaceholder": "Titel"
+  },
   "NoteEditor": {
     "pictures": "Bilder",
     "picturesHelp": "Klicke, um an der Cursorposition ein Bild in den Editor einzufügen.",
@@ -815,5 +828,54 @@
   },
   "NoteDetailPage": {
     "updatedAt": "Zuletzt aktualisiert am {date} um {time}"
+  },
+  "PasswordInput": {
+    "show": "Passwort anzeigen",
+    "hide": "Passwort verbergen"
+  },
+  "FavoritesPage": {
+    "title": "Favoriten",
+    "description": "Alle deine Lieblingsboards und -notizen an einem Ort."
+  },
+  "RecentPage": {
+    "title": "Zuletzt bearbeitet",
+    "description": "Die Boards und Notizen, die du zuletzt bearbeitet hast."
+  },
+  "HomeDashboard": {
+    "continueTitle": "Mach da weiter, wo du aufgehört hast",
+    "continueOpen": "Notiz öffnen",
+    "statsTitle": "Deine Übersicht",
+    "statNotesWeek": "Notizen diese Woche",
+    "statNotesTotal": "Notizen gesamt",
+    "statInBoards": "in {count} Board{count, plural, one {} other {s}}",
+    "statEditsWeek": "Bearbeitungen (7 Tage)",
+    "statShareViews": "Aufrufe von Freigaben",
+    "statViewsWeek": "+{count} diese Woche",
+    "activityTitle": "Aktivität",
+    "activityRange": "Letzte 12 Monate",
+    "activitySummary": "{total, plural, one {# Bearbeitung} other {# Bearbeitungen}} · aktuelle Serie: {streak, plural, one {# Tag} other {# Tage}}",
+    "activityDay": "{day}: {count, plural, one {# Bearbeitung} other {# Bearbeitungen}}",
+    "onThisDayTitle": "An diesem Tag",
+    "monthsAgo": "{count, plural, one {Vor # Monat} other {Vor # Monaten}}",
+    "yearsAgo": "{count, plural, one {Vor # Jahr} other {Vor # Jahren}}",
+    "forgottenTitle": "Vergessene Notizen",
+    "forgottenRange": "90+ Tage",
+    "review": "Ansehen",
+    "expiringTitle": "Bald ablaufende Freigaben",
+    "entityNote": "Notiz",
+    "entityBoard": "Board",
+    "expiringViews": "{count, plural, one {# Aufruf} other {# Aufrufe}}",
+    "continueEmpty": "Du hast noch keine Notizen. Erstelle eine in einem Board, um sie hier zu sehen.",
+    "onThisDayEmpty": "Keine deiner Notizen wurde an diesem Tag in früheren Monaten oder Jahren erstellt.",
+    "forgottenEmpty": "Nichts vergessen: Alle Notizen wurden in den letzten 90 Tagen bearbeitet.",
+    "expiringEmpty": "In den nächsten 7 Tagen läuft keine Freigabe ab.",
+    "statViewsLive": "Aufrufe in den letzten 7 Tagen",
+    "streakDays": "{count, plural, one {# Tag} other {# Tage}}",
+    "streakLabel": "Aktuelle Serie",
+    "yearEdits": "{count, plural, one {# Bearbeitung} other {# Bearbeitungen}} in diesem Jahr",
+    "legendLess": "Weniger",
+    "legendMore": "Mehr",
+    "onThisDayCount": "{count, plural, one {# Erinnerung} other {# Erinnerungen}}",
+    "expiringRange": "7 Tage"
   }
 }

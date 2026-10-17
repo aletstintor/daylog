@@ -3,37 +3,32 @@ import PageBody from '@/components/PageBody';
 import PageContainer from '@/components/PageContainer';
 import PageFooter from '@/components/PageFooter';
 import PageHeader from '@/components/PageHeader';
-import BoardFavSwitch from '@/app/(authenticated)/components/BoardFavToggle';
 import {
   getBoardsCount,
   getLatestBoardImage,
 } from '@/app/(authenticated)/lib/actions';
 import { getCurrentSession } from '@/app/login/lib/actions';
-import BoardsSection from '@/app/(authenticated)/components/BoardsSection';
-import NotesSection from '@/app/(authenticated)/components/NotesSection';
 import {
-  BoardsSkeleton,
-  NotesSkeleton,
-} from '@/app/(authenticated)/components/HomeSkeletons';
+  ActivitySection,
+  ContinueSection,
+  ExpiringSharesSection,
+  ForgottenSection,
+  OnThisDaySection,
+  StatsSection,
+} from '@/app/(authenticated)/components/HomeSections';
+import { SectionSkeleton } from '@/app/(authenticated)/components/HomeSkeletons';
 import { getImageUrlOrFile } from '@/utils/image';
 import { getTranslations } from 'next-intl/server';
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) {
+export default async function Home() {
   const { user } = await getCurrentSession();
   if (user === null) {
     // This is now redundant but safe to keep as a double check
     return null;
   }
 
-  const { showFav = 'false' } = await searchParams;
-  const isShowFav = showFav === 'true';
-
   // Only the cheap header data is awaited here so the header renders right away.
-  // Boards and Notes stream in independently via their own Suspense boundaries.
+  // Each dashboard section streams in independently via its own Suspense boundary.
   const [boardsCount, latestBoardImage] = await Promise.all([
     getBoardsCount(),
     getLatestBoardImage(),
@@ -50,23 +45,37 @@ export default async function Home({
         imageUrl={getImageUrlOrFile(latestBoardImage ?? '')}
         description={t('description', {
           count: boardsCount,
-          activity: isShowFav ? t('favoriteActivity') : t('recentActivity'),
+          activity: t('recentActivity'),
         })}
-      >
-        {boardsCount > 0 && (
-          <div className="flex justify-end w-full md:w-auto">
-            <BoardFavSwitch showFavParam={isShowFav} />
-          </div>
-        )}
-      </PageHeader>
+      />
       <PageBody>
-        <div className="space-y-12 py-4">
-          <Suspense fallback={<BoardsSkeleton />}>
-            <BoardsSection showFav={isShowFav} />
+        <div className="flex flex-col gap-8 py-4">
+          <div className="flex flex-wrap gap-4">
+            <div className="min-w-0 flex-[2_1_520px]">
+              <Suspense fallback={<SectionSkeleton className="h-52" />}>
+                <ContinueSection />
+              </Suspense>
+            </div>
+            <div className="min-w-0 flex-[1_1_300px]">
+              <Suspense fallback={<SectionSkeleton className="h-52" />}>
+                <StatsSection />
+              </Suspense>
+            </div>
+          </div>
+          <Suspense fallback={<SectionSkeleton className="h-36" />}>
+            <ActivitySection />
           </Suspense>
-          <Suspense fallback={<NotesSkeleton />}>
-            <NotesSection showFav={isShowFav} />
-          </Suspense>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            <Suspense fallback={<SectionSkeleton className="h-48" />}>
+              <OnThisDaySection />
+            </Suspense>
+            <Suspense fallback={<SectionSkeleton className="h-48" />}>
+              <ForgottenSection />
+            </Suspense>
+            <Suspense fallback={<SectionSkeleton className="h-48" />}>
+              <ExpiringSharesSection />
+            </Suspense>
+          </div>
         </div>
       </PageBody>
       <PageFooter />
